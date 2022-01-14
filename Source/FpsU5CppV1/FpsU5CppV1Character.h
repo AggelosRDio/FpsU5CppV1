@@ -144,6 +144,15 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+	/* Mobility */
+	protected:
+	virtual void Landed(const FHitResult& Hit) override;
+	virtual void Jump() override;
+
+private:
+	bool bIsLanded;
+	int nJumpCount;
+	FVector DoubleJumpVector;
 
 	public:
 		/* DASH */
@@ -168,8 +177,9 @@ public:
 private:
 		float fDashDelay;
 		FTimerHandle DashCooldownManager;
-
-
+		bool bIsDashOnCooldown;
+		void BeginDashCooldown();
+		
 	/* Weapon Firing */
 public:
 	void OnAlternateFire();

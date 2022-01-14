@@ -108,6 +108,8 @@ void AFpsU5CppV1Character::BeginPlay()
 	fDashMultiplicationFactor = 1000.0f;
 	DashVector = FVector(0.0f, 0.0f, 300.0f);
 	fDashDelay = 2.0f;
+	MaxDashCounter = 2;
+	bIsDashOnCooldown = false;
 
 	ShellAmmoCap = 24;
 	ShellAmmo = 10;
@@ -119,6 +121,9 @@ void AFpsU5CppV1Character::BeginPlay()
 	RocketAmmo = 10;
 
 	bIsWeaponFiring = false;
+	nJumpCount = 0;
+	bIsLanded = true;
+	DoubleJumpVector = FVector(0.0f, 0.0f, 300.0f);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -158,54 +163,6 @@ void AFpsU5CppV1Character::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAxis("TurnRate", this, &AFpsU5CppV1Character::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AFpsU5CppV1Character::LookUpAtRate);
-}
-
-void AFpsU5CppV1Character::OnFire()
-{
-	// try and fire a projectile
-	if (ProjectileClass != nullptr)
-	{
-		UWorld* const World = GetWorld();
-		if (World != nullptr)
-		{
-			if (bUsingMotionControllers)
-			{
-				const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
-				const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
-				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-			}
-			else
-			{
-				const FRotator SpawnRotation = GetControlRotation();
-				// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-				const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
-
-				//Set Spawn Collision Handling Override
-				FActorSpawnParameters ActorSpawnParams;
-				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-				// spawn the projectile at the muzzle
-				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			}
-		}
-	}
-
-	// try and play the sound if specified
-	if (FireSound != nullptr)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	}
-
-	// try and play a firing animation if specified
-	if (FireAnimation != nullptr)
-	{
-		// Get the animation object for the arms mesh
-		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-		if (AnimInstance != nullptr)
-		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		}
-	}
 }
 
 void AFpsU5CppV1Character::OnResetVR()
@@ -335,22 +292,25 @@ void AFpsU5CppV1Character::OnDash()
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Already Dashing"));
 		return;
 	}
-
+	
 	GetForwardDashVector();
 	GetRightDashVector();
 
 	SetActorLocation(DashVector, true);
 
 	DashCounter--;
+	bIsDashOnCooldown = true;
+
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Dashed"));
 	ResetDashVector();
 }
 
 void AFpsU5CppV1Character::OnDashRelease()
 {
-	GetWorld()->GetTimerManager().SetTimer(DashCooldownManager, this, &AFpsU5CppV1Character::RefreshDash, fDashDelay, false, 2.0f);
-}
+	if (!bIsDashOnCooldown) return;
 
+	GetWorld()->GetTimerManager().SetTimer(DashCooldownManager, this, &AFpsU5CppV1Character::RefreshDash, fDashDelay, false);
+}
 
 void AFpsU5CppV1Character::ResetDashVector()
 {
@@ -359,13 +319,20 @@ void AFpsU5CppV1Character::ResetDashVector()
 
 void AFpsU5CppV1Character::RefreshDash()
 {
-	DashCounter++;
+	if (DashCounter < MaxDashCounter)
+	{
+		DashCounter++;
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Dash Counter Increased"));
 
-	if (DashCounter < MaxDashCounter) return;
+		bIsDashOnCooldown = DashCounter < MaxDashCounter;
+		if (bIsDashOnCooldown) OnDashRelease();
+
+		return;
+	}
 
 	GetWorld()->GetTimerManager().ClearTimer(DashCooldownManager);
+	bIsDashOnCooldown = false;
 }
-
 
 FVector AFpsU5CppV1Character::GetForwardDashVector()
 {
@@ -407,6 +374,57 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 	return DashVector;
 }
 
+
+
+/* Fire */
+void AFpsU5CppV1Character::OnFire()
+{
+	// try and fire a projectile
+	if (ProjectileClass != nullptr)
+	{
+		UWorld* const World = GetWorld();
+		if (World != nullptr)
+		{
+			if (bUsingMotionControllers)
+			{
+				const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
+				const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
+				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			}
+			else
+			{
+				const FRotator SpawnRotation = GetControlRotation();
+				// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+				const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+
+				//Set Spawn Collision Handling Override
+				FActorSpawnParameters ActorSpawnParams;
+				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+				// spawn the projectile at the muzzle
+				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			}
+		}
+	}
+
+	// try and play the sound if specified
+	//if (FireSound != nullptr)
+	//{
+	//	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	//}
+
+	// try and play a firing animation if specified
+	if (FireAnimation != nullptr)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(FireAnimation, 1.f);
+		}
+	}
+}
+
 void AFpsU5CppV1Character::OnAlternateFire()
 {
 	bIsWeaponFiring = true;
@@ -419,4 +437,35 @@ void AFpsU5CppV1Character::OnAlternateFireRelease()
 	bIsWeaponFiring = false;
 
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Alternate Fire Released"));
+}
+
+void AFpsU5CppV1Character::Landed(const FHitResult& Hit)
+{
+	bIsLanded = true;
+	nJumpCount = 0;
+	Super::Landed(Hit);
+}
+
+void AFpsU5CppV1Character::Jump()
+{
+	if (bIsLanded)
+	{
+		Super::Jump();
+		nJumpCount++;
+		bIsLanded = false;
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Jump"));
+		return;
+	}
+
+	if (nJumpCount > 1) {
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Can't Jump"));
+		return;
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f,FColor::Cyan, TEXT("Double Jump"));
+
+	LaunchCharacter(DoubleJumpVector, false, false);
+
+	nJumpCount++;
+
 }
