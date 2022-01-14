@@ -146,7 +146,6 @@ public:
 
 
 	public:
-
 		/* DASH */
 		void OnDash();
 		void OnDashRelease();
@@ -166,8 +165,35 @@ public:
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash)
 			FVector DashVector;
 
-
+private:
 		float fDashDelay;
 		FTimerHandle DashCooldownManager;
+
+
+	/* Weapon Firing */
+public:
+	void OnAlternateFire();
+	void OnAlternateFireRelease();
+
+	/* Ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int ShellAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int ShellAmmoCap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int BulletAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int BulletAmmoCap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int EnergyAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int EnergyAmmoCap;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int RocketAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int RocketAmmoCap;
+
+private:
+	bool bIsWeaponFiring;
 };
 

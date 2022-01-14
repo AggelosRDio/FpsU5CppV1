@@ -108,6 +108,17 @@ void AFpsU5CppV1Character::BeginPlay()
 	fDashMultiplicationFactor = 1000.0f;
 	DashVector = FVector(0.0f, 0.0f, 300.0f);
 	fDashDelay = 2.0f;
+
+	ShellAmmoCap = 24;
+	ShellAmmo = 10;
+	BulletAmmoCap = 180;
+	BulletAmmo = 100;
+	EnergyAmmoCap = 250;
+	EnergyAmmo = 100;
+	RocketAmmoCap = 13;
+	RocketAmmo = 10;
+
+	bIsWeaponFiring = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -124,6 +135,9 @@ void AFpsU5CppV1Character::SetupPlayerInputComponent(class UInputComponent* Play
 
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AFpsU5CppV1Character::OnFire);
+
+	PlayerInputComponent->BindAction("AlternateFire", IE_Pressed, this, &AFpsU5CppV1Character::OnAlternateFire);
+	PlayerInputComponent->BindAction("AlternateFire", IE_Released, this, &AFpsU5CppV1Character::OnAlternateFireRelease);
 
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &AFpsU5CppV1Character::OnDash);
 	PlayerInputComponent->BindAction("Dash", IE_Released, this, &AFpsU5CppV1Character::OnDashRelease);
@@ -391,4 +405,18 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 	}
 
 	return DashVector;
+}
+
+void AFpsU5CppV1Character::OnAlternateFire()
+{
+	bIsWeaponFiring = true;
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Alternate Fire"));
+}
+
+void AFpsU5CppV1Character::OnAlternateFireRelease()
+{
+	bIsWeaponFiring = false;
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Alternate Fire Released"));
 }
