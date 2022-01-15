@@ -7,7 +7,12 @@
 		{
 			"Name": "FpsU5CppV1",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"UMG",
+				"AIModule",
+				"Engine"
+			]
 		}
 	]
 }

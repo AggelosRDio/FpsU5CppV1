@@ -205,5 +205,12 @@ public:
 
 private:
 	bool bIsWeaponFiring;
+
+public:
+
+private:
+	class UAIPerceptionStimuliSourceComponent* stimulus;
+
+	void SetupStimulus();
 };
 

@@ -10,6 +10,8 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -82,6 +84,8 @@ AFpsU5CppV1Character::AFpsU5CppV1Character()
 
 	// Uncomment the following line to turn motion controllers on by default:
 	//bUsingMotionControllers = true;
+
+	SetupStimulus();
 }
 
 void AFpsU5CppV1Character::BeginPlay()
@@ -296,7 +300,9 @@ void AFpsU5CppV1Character::OnDash()
 	GetForwardDashVector();
 	GetRightDashVector();
 
-	SetActorLocation(DashVector, true);
+	LaunchCharacter(DashVector, false, false);
+
+	//SetActorLocation(DashVector, true);
 
 	DashCounter--;
 	bIsDashOnCooldown = true;
@@ -408,10 +414,10 @@ void AFpsU5CppV1Character::OnFire()
 	}
 
 	// try and play the sound if specified
-	//if (FireSound != nullptr)
-	//{
-	//	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	//}
+	if (FireSound != nullptr)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
 
 	// try and play a firing animation if specified
 	if (FireAnimation != nullptr)
@@ -437,6 +443,14 @@ void AFpsU5CppV1Character::OnAlternateFireRelease()
 	bIsWeaponFiring = false;
 
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Alternate Fire Released"));
+}
+
+void AFpsU5CppV1Character::SetupStimulus()
+{
+	stimulus = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("Stimulus"));
+	stimulus->RegisterForSense(TSubclassOf<UAISense_Sight>());
+	stimulus->RegisterWithPerceptionSystem();
+
 }
 
 void AFpsU5CppV1Character::Landed(const FHitResult& Hit)
