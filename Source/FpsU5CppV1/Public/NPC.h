@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "NPC.generated.h"
 
+class APatrolPath;
 UCLASS()
 class FPSU5CPPV1_API ANPC : public ACharacter
 {
@@ -25,4 +26,11 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	APatrolPath* GetPatrolPath();
+//private:
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+		APatrolPath* PatrolPath;
 };

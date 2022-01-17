@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "PatrolPath.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class FPSU5CPPV1_API APatrolPath : public AActor
 {
 	GENERATED_BODY()
@@ -15,12 +15,10 @@ public:
 	// Sets default values for this actor's properties
 	APatrolPath();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	FVector GetPatrolPoint(int const index) const;
+	int Num() const;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (MakeEditWidget = true, AllowPrivateAccess = true))
+		TArray<FVector> PatrolPoints;
 };
