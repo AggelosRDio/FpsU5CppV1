@@ -151,6 +151,8 @@ void AFpsU5CppV1Character::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &AFpsU5CppV1Character::OnDash);
 	PlayerInputComponent->BindAction("Dash", IE_Released, this, &AFpsU5CppV1Character::OnDashRelease);
 
+	PlayerInputComponent->BindAction("AttackMelee", IE_Pressed, this, &AFpsU5CppV1Character::onMeleeAttack);
+
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
 
@@ -451,6 +453,16 @@ void AFpsU5CppV1Character::SetupStimulus()
 	stimulus->RegisterForSense(TSubclassOf<UAISense_Sight>());
 	stimulus->RegisterWithPerceptionSystem();
 
+}
+
+void AFpsU5CppV1Character::onMeleeAttack()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Melee Attack Placeholder"));
+
+	/*if (montage)
+	{
+		PlayAnimMontage(montage);
+	}*/
 }
 
 void AFpsU5CppV1Character::Landed(const FHitResult& Hit)

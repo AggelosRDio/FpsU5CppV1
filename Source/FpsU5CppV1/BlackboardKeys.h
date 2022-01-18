@@ -10,4 +10,5 @@ namespace BlackboardKeys
 
 	TCHAR const* const PatrolPathVector = TEXT("PatrolPathVector");
 	TCHAR const* const PatrolPathIndex = TEXT("PatrolPathIndex");
+	TCHAR const* const PlayerIsInMeleeRange = TEXT("PlayerIsInMeleeRange");
 }

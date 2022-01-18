@@ -1,13 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "ChangeSpeed.h"
-
 #include "AIController.h"
 #include "NPC.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-class ANPC;
 
 UChangeSpeed::UChangeSpeed()
 {

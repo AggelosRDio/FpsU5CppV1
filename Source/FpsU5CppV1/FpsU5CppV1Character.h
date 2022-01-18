@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Animation/AnimMontage.h"
 #include "FpsU5CppV1Character.generated.h"
 
 class UInputComponent;
@@ -212,5 +213,10 @@ private:
 	class UAIPerceptionStimuliSourceComponent* stimulus;
 
 	void SetupStimulus();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
+		UAnimMontage* montage;
+
+	void onMeleeAttack();
 };
 

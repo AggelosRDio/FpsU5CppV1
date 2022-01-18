@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class FPSU5CPPV1_API UChangeSpeed : public UBTService_BlackboardBase
+class FPSU5CPPV1_API UChangeSpeed final : public UBTService_BlackboardBase
 {
 	GENERATED_BODY()
 
