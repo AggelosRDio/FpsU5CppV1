@@ -2,6 +2,8 @@
 
 
 #include "FindRandomLocation.h"
+
+#include "NmeBruiser_AiController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Runtime/NavigationSystem/Public/NavigationSystem.h"
 #include "NPC_AiController.h"
@@ -16,7 +18,7 @@ UFindRandomLocation::UFindRandomLocation(FObjectInitializer const& objectInitial
 EBTNodeResult::Type UFindRandomLocation::ExecuteTask(UBehaviorTreeComponent& ownerComp, uint8* nodeMemory)
 {
 	// get AI Controller and its NPC
-	auto const cont = Cast<ANPC_AiController>(ownerComp.GetAIOwner());
+	auto const cont = Cast<ANmeBruiser_AiController>(ownerComp.GetAIOwner());//Cast<ANPC_AiController>(ownerComp.GetAIOwner());
 	auto const npc = cont->GetPawn();
 
 	// obtain npc location to use as an origin location

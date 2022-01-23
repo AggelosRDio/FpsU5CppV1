@@ -17,7 +17,7 @@ EBTNodeResult::Type UChasePlayer::ExecuteTask(UBehaviorTreeComponent& OwnerComp,
 {
 	// get TargetLocation from blackboard via AI controller
 	auto const controller = Cast<ANPC_AiController>(OwnerComp.GetAIOwner());
-	auto const playerLocation = controller->GetBlackboard()->GetValueAsVector(BlackboardKeys::targetLocation);
+	auto const playerLocation = controller->GetBlackboard()->GetValueAsVector(GetSelectedBlackboardKey());
 
 	// move to the players location
 	UAIBlueprintHelperLibrary::SimpleMoveToLocation(controller, playerLocation);

@@ -9,15 +9,14 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "FpsU5CppV1/BlackboardKeys.h"
-#include "FpsU5CppV1/FpsU5CppV1Character.h"
-#include "GameFramework/Character.h"
 #include "Perception/AIPerceptionComponent.h"
-
+#include "FpsU5CppV1/AiTags.h"
+#include "Perception/AISenseConfig_Hearing.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
 ANPC_AiController::ANPC_AiController(FObjectInitializer const& ObjectInitializer)
 {
 	static ConstructorHelpers::FObjectFinder<UBehaviorTree> obj(TEXT("BehaviorTree'/Game/AI/NPC_BT.NPC_BT'"));
-
 	if (obj.Succeeded())
 	{
 		bTree = obj.Object;
@@ -54,35 +53,67 @@ UBlackboardComponent* ANPC_AiController::GetBlackboard() const
 
 void ANPC_AiController::OnUpdated(TArray<AActor*> const& updatedActors)
 {
-
-}
-
-void ANPC_AiController::OnTargetDetected(AActor* actor, FAIStimulus const stimulus)
-{
-	if (auto const ch = Cast<AFpsU5CppV1Character>(actor))
+	for(auto x = 0; x < updatedActors.Num(); x++)
 	{
-		GetBlackboard()->SetValueAsBool(BlackboardKeys::canSeePlayer, stimulus.WasSuccessfullySensed());
+		FActorPerceptionBlueprintInfo info;
+		GetPerceptionComponent()->GetActorsPerception(updatedActors[x], info);
+
+		for (auto k = 0; k < info.LastSensedStimuli.Num(); k++)
+		{
+			FAIStimulus const stim = info.LastSensedStimuli[k];
+
+			if(stim.Tag == Tags::NoiseTag)
+			{
+				GetBlackboard()->SetValueAsBool(BlackboardKeys::IsInvestigating, stim.WasSuccessfullySensed());
+				GetBlackboard()->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);
+			}
+			
+			if(stim.Type.Name == "Default__AISense_Sight")
+			{
+				GetBlackboard()->SetValueAsBool(BlackboardKeys::canSeePlayer, stim.WasSuccessfullySensed());
+			}
+		}
 	}
 }
+
+
 
 void ANPC_AiController::SetupPerceptionSystem()
 {
 	// Create and initialise sight configuration object
 
-	sightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SIght Config"));
-	SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component")));
+	sightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
 
-	sightConfig->SightRadius = 500.0f;
-	sightConfig->LoseSightRadius = sightConfig->SightRadius + 50.0f;
-	sightConfig->PeripheralVisionAngleDegrees = 90.0f;
-	sightConfig->SetMaxAge(5.0f);
-	sightConfig->AutoSuccessRangeFromLastSeenLocation = 900.0f;
-	sightConfig->DetectionByAffiliation.bDetectEnemies = true;
-	sightConfig->DetectionByAffiliation.bDetectFriendlies = true;
-	sightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+	if (sightConfig)
+	{
+		SetPerceptionComponent(*CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("Perception Component")));
+
+		sightConfig->SightRadius = 500.0f;
+		sightConfig->LoseSightRadius = sightConfig->SightRadius + 50.0f;
+		sightConfig->PeripheralVisionAngleDegrees = 90.0f;
+		sightConfig->SetMaxAge(5.0f);
+		sightConfig->AutoSuccessRangeFromLastSeenLocation = 900.0f;
+		sightConfig->DetectionByAffiliation.bDetectEnemies = true;
+		sightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+		sightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+
+		// add sight configuration component to perception component
+		GetPerceptionComponent()->SetDominantSense(*sightConfig->GetSenseImplementation());
+		//GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this, &ANPC_AiController::OnTargetDetected);
+		GetPerceptionComponent()->ConfigureSense(*sightConfig);
+	}
+
+	// create and initialize hearing config object
+	hearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("Hearing Config"));
+
+	if (!hearingConfig) return;
+
+	hearingConfig->HearingRange = 3000.0f;
+	hearingConfig->DetectionByAffiliation.bDetectEnemies = true;
+	hearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	hearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
 	// add sight configuration component to perception component
-	GetPerceptionComponent()->SetDominantSense(*sightConfig->GetSenseImplementation());
-	GetPerceptionComponent()->OnTargetPerceptionUpdated.AddDynamic(this, &ANPC_AiController::OnTargetDetected);
-	GetPerceptionComponent()->ConfigureSense(*sightConfig);
+	GetPerceptionComponent()->OnPerceptionUpdated.AddDynamic(this, &ANPC_AiController::OnUpdated);
+	GetPerceptionComponent()->ConfigureSense(*hearingConfig);
 }

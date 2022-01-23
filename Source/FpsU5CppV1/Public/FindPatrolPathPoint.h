@@ -16,4 +16,7 @@ class FPSU5CPPV1_API UFindPatrolPathPoint : public UBTTask_BlackboardBase
 public:
 	UFindPatrolPathPoint(FObjectInitializer const& ObjectInitializer);
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+//private:
+//	UPROPERTY(EditAnywhere, Category = Blackboard, meta = (AllowPrivateAccess = true))
+//		struct FBlackboardKeySelector PatrolPathVectorKey;
 };

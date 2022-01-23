@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "CombatInterface.h"
 #include "NPC.generated.h"
 
 class APatrolPath;
 UCLASS()
-class FPSU5CPPV1_API ANPC : public ACharacter, public ICombatInterface
+class FPSU5CPPV1_API ANPC : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -30,19 +29,19 @@ public:
 
 	APatrolPath* GetPatrolPath();
 
-		/*UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Combat)
-		int MeleeAttack();*/
+	void MeleeAttack();
+	UAnimMontage* GetMontage() const;
 
-		int MeleeAttack_Implementation() override;
+	float GetHealth() const;
+	void SetHealth(float const value);
 
-		UAnimMontage* GetMontage() const;
-
-//private:
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 		APatrolPath* PatrolPath;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
 		UAnimMontage* montage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float health = 100.0f;
 };

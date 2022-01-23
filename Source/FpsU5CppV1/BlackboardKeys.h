@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Runtime/Core/Public/UObject/NameTypes.h"
-#include "Runtime/Core/Public/Containers/UnrealString.h"
-
 namespace BlackboardKeys
 {
 	TCHAR const * const targetLocation = TEXT("TargetLocation");
@@ -11,4 +8,5 @@ namespace BlackboardKeys
 	TCHAR const* const PatrolPathVector = TEXT("PatrolPathVector");
 	TCHAR const* const PatrolPathIndex = TEXT("PatrolPathIndex");
 	TCHAR const* const PlayerIsInMeleeRange = TEXT("PlayerIsInMeleeRange");
+	TCHAR const* const IsInvestigating = TEXT("IsInvestigating");
 }

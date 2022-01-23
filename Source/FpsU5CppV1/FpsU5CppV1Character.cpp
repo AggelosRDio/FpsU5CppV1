@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FpsU5CppV1Character.h"
+//#include "AiTags.h"
+#include "AiTags.h"
 #include "FpsU5CppV1Projectile.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -10,16 +12,21 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "MotionControllerComponent.h"
+#include "UserHudWidget.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
+#include "Components/WidgetComponent.h"
+#include "Perception/AISense_Hearing.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "TimerManager.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
 //////////////////////////////////////////////////////////////////////////
 // AFpsU5CppV1Character
 
-AFpsU5CppV1Character::AFpsU5CppV1Character()
+AFpsU5CppV1Character::AFpsU5CppV1Character() //: WidgetComponent(CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthValue")))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
@@ -86,6 +93,46 @@ AFpsU5CppV1Character::AFpsU5CppV1Character()
 	//bUsingMotionControllers = true;
 
 	SetupStimulus();
+
+	//if(WidgetComponent)
+	//{
+	//	WidgetComponent->SetupAttachment(GetRootComponent());
+	//	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	//	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 85.0f));
+
+	//	static ConstructorHelpers::FClassFinder<UUserWidget> widgetClass(TEXT("/Game/UI/UserHud_BP"));
+
+	//	if (widgetClass.Succeeded())
+	//	{
+	//		WidgetComponent->SetWidgetClass(widgetClass.Class);
+	//	}
+
+	//	auto const uw = Cast<UUserHudWidget>();
+
+	//	if (uw)
+	//	{
+	//		uw->AddToViewport();
+	//	}
+	//	
+
+	////	//widgetClass->
+	//}
+}
+
+void AFpsU5CppV1Character::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	MyTimeline.TickTimeline(DeltaSeconds);
+
+	//auto const uw = Cast<UUserHudWidget>(WidgetComponent->GetUserWidgetObject());
+
+	/*if (uw)
+	{
+		uw->SetBarValuePercent(CurrentHealth / MaxHealth);
+	}*/
+
+	//uw->AddToViewport();
 }
 
 void AFpsU5CppV1Character::BeginPlay()
@@ -107,27 +154,38 @@ void AFpsU5CppV1Character::BeginPlay()
 		VR_Gun->SetHiddenInGame(true, true);
 		Mesh1P->SetHiddenInGame(false, true);
 	}
-
-	DashCounter = 2;
-	fDashMultiplicationFactor = 1000.0f;
-	DashVector = FVector(0.0f, 0.0f, 300.0f);
-	fDashDelay = 2.0f;
-	MaxDashCounter = 2;
-	bIsDashOnCooldown = false;
-
-	ShellAmmoCap = 24;
-	ShellAmmo = 10;
-	BulletAmmoCap = 180;
-	BulletAmmo = 100;
-	EnergyAmmoCap = 250;
-	EnergyAmmo = 100;
-	RocketAmmoCap = 13;
-	RocketAmmo = 10;
-
+	
 	bIsWeaponFiring = false;
 	nJumpCount = 0;
 	bIsLanded = true;
 	DoubleJumpVector = FVector(0.0f, 0.0f, 300.0f);
+
+	FullHealth = 1000.0f;
+	CurrentHealth = FullHealth;
+	HealthPercentage = 1.0f;
+	PreviousHealth = HealthPercentage;
+	SetCanBeDamaged(true);
+	//bCanBeDamaged = true;
+
+	FullMagic = 100.0f;
+	CurrentMagic = 100.0f;
+	MagicPercentage = 1.0f;
+	PreviousMagic = MagicPercentage;
+	
+	bCanUseMagic = true;
+
+	if(MagicCurve)
+	{
+		FOnTimelineFloat timelineCallback;
+		FOnTimelineEventStatic timelineFinishedCallback;
+
+		timelineCallback.BindUFunction(this, FName("SetMagicState"));
+		timelineFinishedCallback.BindUFunction(this, FName("SetMagicState"));
+
+		MyTimeline.AddInterpFloat(MagicCurve, timelineCallback);
+		MyTimeline.SetTimelineFinishedFunc(timelineFinishedCallback);
+		
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -388,30 +446,31 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 void AFpsU5CppV1Character::OnFire()
 {
 	// try and fire a projectile
-	if (ProjectileClass != nullptr)
+	if (ProjectileClass == nullptr || FMath::IsNearlyZero(CurrentMagic, 0.001f) || !bCanUseMagic)
+		return;
+
+
+	UWorld* const World = GetWorld();
+	if (World != nullptr)
 	{
-		UWorld* const World = GetWorld();
-		if (World != nullptr)
+		if (bUsingMotionControllers)
 		{
-			if (bUsingMotionControllers)
-			{
-				const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
-				const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
-				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-			}
-			else
-			{
-				const FRotator SpawnRotation = GetControlRotation();
-				// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-				const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+			const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
+			const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
+			World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+		}
+		else
+		{
+			const FRotator SpawnRotation = GetControlRotation();
+			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+			const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
 
-				//Set Spawn Collision Handling Override
-				FActorSpawnParameters ActorSpawnParams;
-				ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+			//Set Spawn Collision Handling Override
+			FActorSpawnParameters ActorSpawnParams;
+			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-				// spawn the projectile at the muzzle
-				World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			}
+			// spawn the projectile at the muzzle
+			World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 
@@ -419,6 +478,7 @@ void AFpsU5CppV1Character::OnFire()
 	if (FireSound != nullptr)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
 	}
 
 	// try and play a firing animation if specified
@@ -431,6 +491,13 @@ void AFpsU5CppV1Character::OnFire()
 			AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
 	}
+
+	//TODO: Reference Timers below to fix Dash
+	MyTimeline.Stop();
+	GetWorldTimerManager().ClearTimer(MagicTimerHandle);
+	SetMagicChange(-20.0f);
+	GetWorldTimerManager().SetTimer(MagicTimerHandle, this, &AFpsU5CppV1Character::UpdateMagic, 5.0f, false);
+
 }
 
 void AFpsU5CppV1Character::OnAlternateFire()
@@ -463,6 +530,145 @@ void AFpsU5CppV1Character::onMeleeAttack()
 	{
 		PlayAnimMontage(montage);
 	}*/
+}
+
+float AFpsU5CppV1Character::GetCurrentHealth() const
+{
+	return CurrentHealth;
+}
+
+float AFpsU5CppV1Character::GetMaxHealth() const
+{
+	return FullHealth;
+}
+
+void AFpsU5CppV1Character::SetCurrentHealth(float const value)
+{
+	CurrentHealth = value;
+}
+
+float AFpsU5CppV1Character::GetHealth()
+{
+	return HealthPercentage;
+}
+
+FText AFpsU5CppV1Character::GetHealthIntText()
+{
+	const int hp = FMath::RoundHalfFromZero(HealthPercentage * 100);
+	const FString hps = FString::FromInt(hp);
+	const FString healthHud = hps + FString(TEXT("%"));
+	FText hpText = FText::FromString(healthHud);
+
+	return hpText;
+}
+
+float AFpsU5CppV1Character::GetMagic()
+{
+	return MagicPercentage;
+}
+
+FText AFpsU5CppV1Character::GetMagicIntText()
+{
+	const int mp = FMath::RoundHalfFromZero(MagicPercentage * 100);
+	const FString mps = FString::FromInt(mp);
+	const FString fullMps = FString::FromInt(FullMagic);
+	const FString magicHud = mps + FString(TEXT("/") + fullMps);
+	FText mpText = FText::FromString(magicHud);
+
+	return mpText;
+}
+
+void AFpsU5CppV1Character::DamageTimer()
+{
+	GetWorldTimerManager().SetTimer(MemberTimerHandle, this, &AFpsU5CppV1Character::SetDamageState, 2.0f, false);
+}
+
+void AFpsU5CppV1Character::SetDamageState()
+{
+	SetCanBeDamaged(true);
+}
+
+void AFpsU5CppV1Character::SetMagicValue()
+{
+	TimelineValue = MyTimeline.GetPlaybackPosition();
+	CurveFloatValue = PreviousMagic + MagicValue * MagicCurve->GetFloatValue(TimelineValue);
+	CurrentMagic = CurveFloatValue * FullHealth;
+	CurrentMagic = FMath::Clamp(CurrentMagic, 0.0f, FullMagic);
+	MagicPercentage = CurveFloatValue;
+	MagicPercentage = FMath::Clamp(MagicPercentage, 0.0f, 1.0f);
+}
+
+void AFpsU5CppV1Character::SetMagicState()
+{
+	bCanUseMagic = true;
+	MagicValue = 0.0f;
+
+	if(GunDefaultMaterial)
+	{
+		FP_Gun->SetMaterial(0, GunDefaultMaterial);
+	}
+}
+
+void AFpsU5CppV1Character::SetMagicChange(float value)
+{
+	bCanUseMagic = false;
+	PreviousMagic = MagicPercentage;
+	MagicValue = value / FullMagic;
+
+	if(GunOverheatMaterial)
+	{
+		FP_Gun->SetMaterial(0, GunOverheatMaterial);
+	}
+
+	MyTimeline.PlayFromStart();
+}
+
+void AFpsU5CppV1Character::UpdateMagic()
+{
+	PreviousMagic = MagicPercentage;
+	MagicPercentage = CurrentMagic / FullMagic;
+	MagicValue = 1.0f;
+	MyTimeline.PlayFromStart();
+}
+
+bool AFpsU5CppV1Character::PlayFlash()
+{
+	if(redFlash)
+	{
+		redFlash = false;
+		return true;
+	}
+
+	return false;
+}
+
+//void AFpsU5CppV1Character::ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation,
+//	FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection,
+//	AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo)
+//{
+//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Taking Damage"));
+//	SetCanBeDamaged(false);
+//	redFlash = true;
+//	UpdateHealth(-Damage);
+//	// start invincibility timer
+//	DamageTimer();
+//}
+
+float AFpsU5CppV1Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	SetCanBeDamaged(false);
+	//bCanBeDamaged = false;
+	redFlash = true;
+	UpdateHealth(-DamageAmount);
+	DamageTimer();
+	return DamageAmount;
+}
+
+void AFpsU5CppV1Character::UpdateHealth(float healthChange)
+{
+	CurrentHealth += healthChange;
+	CurrentHealth = FMath::Clamp(CurrentHealth, 0.0f, FullHealth);
+	HealthPercentage = CurrentHealth / FullHealth;
 }
 
 void AFpsU5CppV1Character::Landed(const FHitResult& Hit)

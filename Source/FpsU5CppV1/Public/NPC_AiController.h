@@ -16,6 +16,7 @@ class FPSU5CPPV1_API ANPC_AiController : public AAIController
 	GENERATED_BODY()
 
 public:
+	
 	ANPC_AiController(FObjectInitializer const& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void BeginPlay() override;
@@ -23,7 +24,10 @@ public:
 	virtual void OnPossess(APawn* const InPawn) override;
 
 	UBlackboardComponent* GetBlackboard() const;
+
 private:
+	TCHAR* ObjectToFindBehaviourTree = TEXT("BehaviorTree'/Game/AI/NPC_BT.NPC_BT'");
+
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 		class UBehaviorTreeComponent* BehaviourTreeComponent;
 
@@ -34,11 +38,10 @@ private:
 
 	class UAISenseConfig_Sight* sightConfig;
 
-	UFUNCTION()
-		void OnUpdated(TArray<AActor*> const& updatedActors);
+	class UAISenseConfig_Hearing* hearingConfig;
 
 	UFUNCTION()
-		void OnTargetDetected(AActor* actor, FAIStimulus const stimulus);
+		void OnUpdated(TArray<AActor*> const& updatedActors);
 
 	void SetupPerceptionSystem();
 };

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimMontage.h"
+#include "Components/TimelineComponent.h"
 #include "FpsU5CppV1Character.generated.h"
 
 class UInputComponent;
@@ -54,9 +55,10 @@ class AFpsU5CppV1Character : public ACharacter
 
 public:
 	AFpsU5CppV1Character();
-
+	
 protected:
-	virtual void BeginPlay();
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 public:
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -125,8 +127,7 @@ protected:
 	void EndTouch(const ETouchIndex::Type FingerIndex, const FVector Location);
 	void TouchUpdate(const ETouchIndex::Type FingerIndex, const FVector Location);
 	TouchData	TouchItem;
-	
-protected:
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
@@ -146,7 +147,7 @@ public:
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 	/* Mobility */
-	protected:
+protected:
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void Jump() override;
 
@@ -155,61 +156,59 @@ private:
 	int nJumpCount;
 	FVector DoubleJumpVector;
 
-	public:
-		/* DASH */
-		void OnDash();
-		void OnDashRelease();
-		FVector GetForwardDashVector();
-		FVector GetRightDashVector();
-		void ResetDashVector();
-		void RefreshDash();
 
-		bool bIsDashing;
-		float fDashMultiplicationFactor;
+	/* DASH */
+	void OnDash();
+	void OnDashRelease();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
+		float fDashDelay = 2.0f;
 
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash)
-			int DashCounter;
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash)
-			int MaxDashCounter;
+	FTimerHandle DashCooldownManager;
+	bool bIsDashOnCooldown = false;
+		//void BeginDashCooldown();
+	bool bIsDashing = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
+		float fDashMultiplicationFactor = 1000.0f;
 
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash)
-			FVector DashVector;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
+		int DashCounter = 2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
+		int MaxDashCounter = 2;
 
-private:
-		float fDashDelay;
-		FTimerHandle DashCooldownManager;
-		bool bIsDashOnCooldown;
-		void BeginDashCooldown();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
+		FVector DashVector = FVector(0.0f, 0.0f, 300.0f);;
+	FVector GetForwardDashVector();
+	FVector GetRightDashVector();
+	void ResetDashVector();
+	void RefreshDash();
+
 		
 	/* Weapon Firing */
-public:
+
 	void OnAlternateFire();
 	void OnAlternateFireRelease();
 
-	/* Ammo */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int ShellAmmo;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int ShellAmmoCap;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int BulletAmmo;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int BulletAmmoCap;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int EnergyAmmo;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int EnergyAmmoCap;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int RocketAmmo;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int RocketAmmoCap;
-
-private:
 	bool bIsWeaponFiring;
 
-public:
+	/* Ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int ShellAmmo = 10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int ShellAmmoCap = 24;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int BulletAmmo = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int BulletAmmoCap = 180;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int EnergyAmmo = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int EnergyAmmoCap = 250;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int RocketAmmo = 10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		int RocketAmmoCap = 13;
 
-private:
+	/* Perception */
 	class UAIPerceptionStimuliSourceComponent* stimulus;
 
 	void SetupStimulus();
@@ -218,5 +217,106 @@ private:
 		UAnimMontage* montage;
 
 	void onMeleeAttack();
+
+	/* Health & HUD */
+public:
+	float GetCurrentHealth() const;
+	float GetMaxHealth() const;
+	void SetCurrentHealth(float const value);
+
+private:
+	//class UWidgetComponent* WidgetComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float FullHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float CurrentHealth = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float HealthPercentage = 100.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
+		float PreviousHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float FullMagic = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float CurrentMagic = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Magic", meta = (AllowPrivateAccess = true))
+		float MagicValue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float MagicPercentage = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
+		float PreviousMagic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
+		bool redFlash;
+
+	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+		UCurveFloat* MagicCurve;
+
+	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+		FTimeline MyTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+		FTimerHandle MemberTimerHandle;
+
+	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+		FTimerHandle MagicTimerHandle;
+
+	float CurveFloatValue;
+	float TimelineValue;
+	bool bCanUseMagic;
+
+public:
+	UFUNCTION(BlueprintPure, Category = Health)
+		float GetHealth();
+	UFUNCTION(BlueprintPure, Category = Health)
+		FText GetHealthIntText();
+	UFUNCTION(BlueprintPure, Category = Health)
+		float GetMagic();
+	UFUNCTION(BlueprintPure, Category = Health)
+		FText GetMagicIntText();
+
+	UFUNCTION()
+		void DamageTimer();
+
+	UFUNCTION()
+		void SetDamageState();
+
+	UFUNCTION()
+		void SetMagicValue();
+
+	UFUNCTION()
+		void SetMagicState();
+
+	UFUNCTION()
+		void SetMagicChange(float value);
+
+	UFUNCTION()
+		void UpdateMagic();
+
+	UFUNCTION(BlueprintPure, Category = Health)
+		bool PlayFlash();
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		UMaterialInterface* GunDefaultMaterial;
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		UMaterialInterface* GunOverheatMaterial;
+
+	
+	//UFUNCTION()
+	//	void ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation, FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection, AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo);
+		//void ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation, FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection, AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo);
+	UFUNCTION(BlueprintCallable, Category = Health)
+		void UpdateHealth(float healthChange);
+protected:
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
 };
 

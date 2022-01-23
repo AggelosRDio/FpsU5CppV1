@@ -13,13 +13,13 @@ EBTNodeResult::Type UMeleeAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp,
 {
 	// Get the NPC
 	auto const controller = OwnerComp.GetAIOwner();
-	auto const npc = Cast<ANPC>(controller->GetPawn());
+	
 
-	if (ICombatInterface* const icombat = Cast<ICombatInterface>(npc))
+	if (auto const npc = Cast<ANPC>(controller->GetPawn()))
 	{
 		if (MontageHasFinished(npc))
 		{
-			icombat->Execute_MeleeAttack(npc);
+			npc->MeleeAttack();
 		}
 	}
 
