@@ -20,6 +20,7 @@
 #include "Perception/AISense_Hearing.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "TimerManager.h"
+#include "Components/SphereComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -124,15 +125,6 @@ void AFpsU5CppV1Character::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	MyTimeline.TickTimeline(DeltaSeconds);
-
-	//auto const uw = Cast<UUserHudWidget>(WidgetComponent->GetUserWidgetObject());
-
-	/*if (uw)
-	{
-		uw->SetBarValuePercent(CurrentHealth / MaxHealth);
-	}*/
-
-	//uw->AddToViewport();
 }
 
 void AFpsU5CppV1Character::BeginPlay()
@@ -471,15 +463,18 @@ void AFpsU5CppV1Character::OnFire()
 
 			// spawn the projectile at the muzzle
 			World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			//AFpsU5CppV1Projectile* projectile = World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			//projectile->GetCollisionComp()->SetGenerateOverlapEvents(true);
+
 		}
 	}
 
 	// try and play the sound if specified
-	if (FireSound != nullptr)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
-	}
+	//if (FireSound != nullptr)
+	//{
+	//	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	//	UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
+	//}
 
 	// try and play a firing animation if specified
 	if (FireAnimation != nullptr)

@@ -15,15 +15,7 @@ class FPSU5CPPV1_API ANPC : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ANPC();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -33,7 +25,20 @@ public:
 	UAnimMontage* GetMontage() const;
 
 	float GetHealth() const;
+	float GetFullHealth() const;
 	void SetHealth(float const value);
+
+	UFUNCTION(BlueprintCallable, Category = Health)
+		void UpdateHealth(float healthChange);
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
@@ -42,6 +47,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
 		UAnimMontage* montage;
 
+	/* Health & Damage */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float health = 100.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float FullHealth;
 };

@@ -18,6 +18,8 @@ ANPC::ANPC()
 
 	//GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	FullHealth = 100.0f;
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +36,29 @@ void ANPC::BeginPlay()
 	}
 }
 
+void ANPC::UpdateHealth(float healthChange)
+{
+	health += healthChange;
+	health = FMath::Clamp(health, 0.0f, FullHealth);
+}
+
+float ANPC::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+                       AActor* DamageCauser)
+{
+	//return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, TEXT("Actor Taking Damage"));
+	SetCanBeDamaged(false);
+	UpdateHealth(-DamageAmount);
+	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, TEXT("Actor Health: " + FText::FromString(FString::FromInt(health))));
+
+	if (FMath::IsNearlyZero(health, 0.0001f))
+	{
+		Destroy();
+	}
+
+	return DamageAmount;
+}
+
 // Called every frame
 void ANPC::Tick(float DeltaTime)
 {
@@ -45,7 +70,6 @@ void ANPC::Tick(float DeltaTime)
 void ANPC::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 APatrolPath* ANPC::GetPatrolPath()
@@ -69,6 +93,11 @@ UAnimMontage* ANPC::GetMontage() const
 float ANPC::GetHealth() const
 {
 	return health;
+}
+
+float ANPC::GetFullHealth() const
+{
+	return FullHealth;
 }
 
 void ANPC::SetHealth(float const value)

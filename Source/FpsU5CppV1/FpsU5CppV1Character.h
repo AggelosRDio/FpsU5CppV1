@@ -165,7 +165,7 @@ private:
 
 	FTimerHandle DashCooldownManager;
 	bool bIsDashOnCooldown = false;
-		//void BeginDashCooldown();
+
 	bool bIsDashing = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Dash, meta = (AllowPrivateAccess = true))
 		float fDashMultiplicationFactor = 1000.0f;
