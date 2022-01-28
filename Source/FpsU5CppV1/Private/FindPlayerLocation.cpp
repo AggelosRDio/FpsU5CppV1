@@ -18,9 +18,7 @@ EBTNodeResult::Type UFindPlayerLocation::ExecuteTask(UBehaviorTreeComponent& Own
 {
 	// get player character and the NPC 's controller
 	auto const player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-
-	auto const controller = Cast<ANPC_AiController>(OwnerComp.GetAIOwner());
-
+	
 	// get player location to use as an origin
 
 	FVector const playerLocation = player->GetActorLocation();
@@ -34,12 +32,12 @@ EBTNodeResult::Type UFindPlayerLocation::ExecuteTask(UBehaviorTreeComponent& Own
 
 		if (navSystem->GetRandomPointInNavigableRadius(playerLocation, searchRadius, loc, nullptr))
 		{
-			controller->GetBlackboard()->SetValueAsVector(BlackboardKeys::targetLocation, loc.Location);
+			OwnerComp.GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::targetLocation, loc.Location);
 		}
 	}
 	else
 	{
-		controller->GetBlackboard()->SetValueAsVector(BlackboardKeys::targetLocation, playerLocation);
+		OwnerComp.GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::targetLocation, playerLocation);
 	}
 
 	// Finish with success

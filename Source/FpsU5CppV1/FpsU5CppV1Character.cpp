@@ -470,11 +470,11 @@ void AFpsU5CppV1Character::OnFire()
 	}
 
 	// try and play the sound if specified
-	//if (FireSound != nullptr)
-	//{
-	//	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-	//	UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
-	//}
+	/*if (FireSound != nullptr)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
+	}*/
 
 	// try and play a firing animation if specified
 	if (FireAnimation != nullptr)

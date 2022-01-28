@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "NPC.generated.h"
 
@@ -31,6 +33,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Health)
 		void UpdateHealth(float healthChange);
 
+	virtual void AttackStart();
+	virtual void AttackEnd();
+
+	virtual UBehaviorTree* GetBehaviorTree() const;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -39,7 +46,7 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
+	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 		APatrolPath* PatrolPath;
@@ -47,10 +54,32 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
 		UAnimMontage* montage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MeleeDamage = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+		UBehaviorTree* BehaviourTree;
+	
 	/* Health & Damage */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float health = 100.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float FullHealth;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = true))
+		class UBoxComponent* RightFistCollisionBox;
+
+	UFUNCTION()
+		void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION()
+		void OnAttackOverlapBegin(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor, UPrimitiveComponent* otherComponent, int const otherBodyIndex, bool const fromSweep, FHitResult const& sweepResult);
+	UFUNCTION()
+		void OnAttackOverlapEnd(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor, UPrimitiveComponent* otherComponent, int const otherBodyIndex);
+
+	UPROPERTY(EditAnywhere, Category = Damage)
+		TSubclassOf<UDamageType> Damage;
+
+	bool bCanDamagePlayer;
 };
