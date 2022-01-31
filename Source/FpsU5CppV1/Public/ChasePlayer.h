@@ -17,4 +17,7 @@ class FPSU5CPPV1_API UChasePlayer : public UBTTask_BlackboardBase
 public:
 	UChasePlayer(FObjectInitializer const& ObjectInitializer);
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+
+private:
+	EBTNodeResult::Type FinishTaskWithSuccess(UBehaviorTreeComponent& OwnerComp);
 };

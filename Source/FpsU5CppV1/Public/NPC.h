@@ -24,6 +24,8 @@ public:
 	APatrolPath* GetPatrolPath();
 
 	void MeleeAttack();
+	void MissileAttack();
+
 	UAnimMontage* GetMontage() const;
 
 	float GetHealth() const;
@@ -38,6 +40,21 @@ public:
 
 	virtual UBehaviorTree* GetBehaviorTree() const;
 	
+	float GetMeleeDamage() { return MeleeDamage; };
+
+	float GetMeleeRange() { return MeleeRange; };
+
+	float GetMissileDamage() { return MissileDamage; };
+
+	float GetMissileRange() { return MissileRange; };
+
+	bool GetCanAttackMelee() { return CanAttackMelee; };
+	bool GetCanAttackRanged() { return CanAttackRanged; };
+
+	virtual bool GetIsAwake() { return IsAwake; };
+
+	virtual void SetIsAwake(bool value) { IsAwake = value; };
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -49,13 +66,34 @@ protected:
 	
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+		bool IsAwake = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 		APatrolPath* PatrolPath;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
 		UAnimMontage* montage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool CanAttackMelee = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
 		float MeleeDamage = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MeleeRange = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MissileDamage = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MissileRange = 3000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool CanAttackRanged = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool Ambush = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
 		UBehaviorTree* BehaviourTree;

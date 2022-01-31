@@ -49,7 +49,7 @@ void ANPC::BeginPlay()
 		RightFistCollisionBox->AttachToComponent(GetMesh(), rules, "had_r_socket");
 		RightFistCollisionBox->SetRelativeLocation(FVector(-7.0f, 0.0f, 0.0f));
 
-		RightFistCollisionBox->OnComponentHit.AddDynamic(this, &ANPC::OnHit);
+		//RightFistCollisionBox->OnComponentHit.AddDynamic(this, &ANPC::OnHit);
 		RightFistCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ANPC::OnAttackOverlapBegin);
 		RightFistCollisionBox->OnComponentEndOverlap.AddDynamic(this, &ANPC::OnAttackOverlapEnd);
 	}
@@ -66,6 +66,7 @@ float ANPC::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, ACon
                        AActor* DamageCauser)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, TEXT("Actor Taking Damage"));
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::FromInt(IsAwake ? 1 : 0));
 	SetCanBeDamaged(false);
 	UpdateHealth(-DamageAmount);
 
@@ -90,16 +91,6 @@ void ANPC::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCom
 	bCanDamagePlayer = false;
 
 	UGameplayStatics::ApplyPointDamage(OtherActor, MeleeDamage, GetActorLocation(), Hit, nullptr, this, Damage);
-
-	//if (OtherComp->IsSimulatingPhysics())
-	//{
-	//	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, TEXT("Projectile Hit"));
-	//	OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
-
-	//	//auto npc = Cast<>
-
-	//	Destroy();
-	//}
 }
 
 void ANPC::OnAttackOverlapBegin(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor,
@@ -156,7 +147,19 @@ APatrolPath* ANPC::GetPatrolPath()
 
 void ANPC::MeleeAttack()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("PAOW!"));
+	//TODO: Add CD -> Check Task
 	if(montage)
+	{
+		PlayAnimMontage(montage);
+	}
+}
+
+void ANPC::MissileAttack() 
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("PEW!"));
+	//TODO: Add CD -> Check Task
+	if (montage) 
 	{
 		PlayAnimMontage(montage);
 	}

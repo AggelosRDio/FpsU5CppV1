@@ -23,6 +23,7 @@ void UIsPlayerInMeleeRange::OnBecomeRelevant(UBehaviorTreeComponent& OwnerComp, 
 
 	// Get player character
 	auto const playerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	//npc->GetView
 
 	//write true or false if the player is within melee range
 	OwnerComp.GetBlackboardComponent()->SetValueAsBool(BlackboardKeys::PlayerIsInMeleeRange, npc->GetDistanceTo(playerCharacter) <= meleeRange);

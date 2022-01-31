@@ -46,6 +46,12 @@ void ANPC_AiController::OnPossess(APawn* const InPawn)
 
 void ANPC_AiController::OnUpdated(TArray<AActor*> const& updatedActors)
 {
+	if (!BlackboardComponent) return;
+	
+	auto const npc = Cast<ANPC>(GetPawn());
+
+	if (!npc) return;
+
 	for(auto x = 0; x < updatedActors.Num(); x++)
 	{
 		FActorPerceptionBlueprintInfo info;
@@ -54,8 +60,84 @@ void ANPC_AiController::OnUpdated(TArray<AActor*> const& updatedActors)
 		for (auto k = 0; k < info.LastSensedStimuli.Num(); k++)
 		{
 			FAIStimulus const stim = info.LastSensedStimuli[k];
+			
+			//if (stim.Tag == Tags::NoiseTag)
+			//{
+			//	//BlackboardComponent->SetValueAsBool(BlackboardKeys::IsInvestigating, stim.WasSuccessfullySensed());
+			//	BlackboardComponent->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);
+			//}
+			//else if (stim.Type.Name == "Default__AISense_Sight")
+			//{
+			//	BlackboardComponent->SetValueAsBool(BlackboardKeys::canSeePlayer, stim.WasSuccessfullySensed());
+			//}
+			
+			if ((stim.Tag != Tags::NoiseTag) && (stim.Type.Name != "Default__AISense_Sight")) continue;
+			
+			bool const isSensed = stim.WasSuccessfullySensed();
+			bool canSeePlayer = false;
 
-			if(BlackboardComponent && stim.Tag == Tags::NoiseTag)
+			if (stim.Type.Name == "Default__AISense_Sight")
+			{
+				//	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Perception: Sight Sensed: ")  );
+				//	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::FromInt(isSensed ? 1 : 0));
+				BlackboardComponent->SetValueAsBool(BlackboardKeys::canSeePlayer, isSensed);
+				canSeePlayer = isSensed;
+			}
+
+			if (stim.Tag == Tags::NoiseTag) {
+				BlackboardComponent->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);
+			}
+
+			if (!isSensed) continue;
+
+			bool isAwake = npc->GetIsAwake();
+
+			if (isSensed && !npc->GetIsAwake())
+			{
+				npc->SetIsAwake(true);
+			}
+
+			BlackboardComponent->SetValueAsObject(BlackboardKeys::Player, UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+			BlackboardComponent->SetValueAsBool(BlackboardKeys::IsAwake, npc->GetIsAwake());
+
+			
+
+			//// if the NPC can see the player character;
+			//if (stim.Type.Name == "Default__AISense_Sight")
+			//{
+			//	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Perception: Sight Sensed: ")  );
+			//	//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, FString::FromInt(isSensed ? 1 : 0));
+			//	BlackboardComponent->SetValueAsBool(BlackboardKeys::canSeePlayer, isSensed);
+			//	canSeePlayer = isSensed;
+			//}
+			//
+			//if (!isSensed) return;
+
+			//
+			//auto const isAwake = BlackboardComponent->GetValueAsBool(BlackboardKeys::IsAwake);
+
+			//if (!isAwake)
+			//{
+			//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Perception: Waking Up"));
+
+			//	BlackboardComponent->SetValueAsBool(BlackboardKeys::IsAwake, true);
+			//}
+
+			//if (stim.Tag == Tags::NoiseTag)
+			//{
+			//	if (!canSeePlayer)
+			//		BlackboardComponent->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);
+			//}
+
+			//=========================================================================================================
+
+			// if (!stim.WasSuccessfullySensed()) continue;
+			/*if (isSensed)
+				BlackboardComponent->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);*/
+
+			
+
+			/*if(BlackboardComponent && stim.Tag == Tags::NoiseTag)
 			{
 				BlackboardComponent->SetValueAsBool(BlackboardKeys::IsInvestigating, stim.WasSuccessfullySensed());
 				BlackboardComponent->SetValueAsVector(BlackboardKeys::targetLocation, stim.StimulusLocation);
@@ -63,7 +145,7 @@ void ANPC_AiController::OnUpdated(TArray<AActor*> const& updatedActors)
 			else if(BlackboardComponent && stim.Type.Name == "Default__AISense_Sight")
 			{
 				BlackboardComponent->SetValueAsBool(BlackboardKeys::canSeePlayer, stim.WasSuccessfullySensed());
-			}
+			}*/
 		}
 	}
 }
