@@ -97,6 +97,12 @@ protected:
 	/** Resets HMD orientation and position in VR. */
 	void OnResetVR();
 
+	void OnSlide();
+
+	void OnSlideRelease();
+
+	bool bIsSliding = false;
+
 	/** Handles moving forward/backward */
 	void MoveForward(float Val);
 
@@ -309,10 +315,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
 		UMaterialInterface* GunOverheatMaterial;
 
-	
-	//UFUNCTION()
-	//	void ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation, FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection, AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo);
-		//void ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation, FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection, AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo);
 	UFUNCTION(BlueprintCallable, Category = Health)
 		void UpdateHealth(float healthChange);
 protected:

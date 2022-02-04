@@ -17,6 +17,12 @@ class AFpsU5CppV1Projectile : public AActor
 public:
 	AFpsU5CppV1Projectile();
 
+	
+	void SetProjectileDamage(float dmg);
+
+	//void SetProjectileMaxSpeed(float maxSpeed);
+	//void SetProjectileMaxSpeed(float maxSpeed);
+
 	/** Sphere collision component */
 	UPROPERTY(EditAnywhere, Category = Projectile)
 		USphereComponent* CollisionComp;
@@ -33,7 +39,7 @@ public:
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
 	/** Returns CollisionComp subobject **/
-	USphereComponent* GetCollisionComp() const { return CollisionComp; }
+	USphereComponent* GetCollisionComp() const { return CollisionComp; };
 	/** Returns ProjectileMovement subobject **/
 	UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 
@@ -45,6 +51,16 @@ public:
 		void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile, meta = (AllowPrivateAccess = true))
+		float InitialSpeed = 3000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile, meta = (AllowPrivateAccess = true))
+		float MaxSpeed = 3000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile, meta = (AllowPrivateAccess = true))
+		float ProjectileDamage = 20.0f;
+
 	bool bCanApplyDamage;
 };
 

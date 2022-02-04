@@ -7,6 +7,8 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "FpsU5CppV1/FpsU5CppV1Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "Math/UnrealMathUtility.h"
+#include "AttackType.h"
 
 // Sets default values
 ANPC::ANPC() : RightFistCollisionBox(CreateDefaultSubobject<UBoxComponent>(TEXT("Fist Collision Box"))), bCanDamagePlayer(true)
@@ -18,6 +20,7 @@ ANPC::ANPC() : RightFistCollisionBox(CreateDefaultSubobject<UBoxComponent>(TEXT(
 
 	//GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 
 	FullHealth = 100.0f;
 
@@ -28,6 +31,11 @@ ANPC::ANPC() : RightFistCollisionBox(CreateDefaultSubobject<UBoxComponent>(TEXT(
 		RightFistCollisionBox->SetCollisionProfileName(TEXT("NoCollision"));
 		
 	}
+}
+
+void ANPC::SetMovementSpeed(float speed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = speed;
 }
 
 // Called when the game starts or when spawned
@@ -90,7 +98,7 @@ void ANPC::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveCom
 
 	bCanDamagePlayer = false;
 
-	UGameplayStatics::ApplyPointDamage(OtherActor, MeleeDamage, GetActorLocation(), Hit, nullptr, this, Damage);
+	UGameplayStatics::ApplyPointDamage(OtherActor, GetMeleeDamage(), GetActorLocation(), Hit, nullptr, this, Damage);
 }
 
 void ANPC::OnAttackOverlapBegin(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor,
@@ -101,7 +109,7 @@ void ANPC::OnAttackOverlapBegin(UPrimitiveComponent* const overlappedComponent, 
 
 	bCanDamagePlayer = false;
 
-	UGameplayStatics::ApplyPointDamage(otherActor, MeleeDamage, GetActorLocation(), sweepResult, nullptr, this, Damage);
+	UGameplayStatics::ApplyPointDamage(otherActor, GetMeleeDamage(), GetActorLocation(), sweepResult, nullptr, this, Damage);
 }
 
 void ANPC::OnAttackOverlapEnd(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor,
@@ -120,11 +128,56 @@ void ANPC::AttackEnd()
 {
 	RightFistCollisionBox->SetCollisionProfileName("NoCollision");
 	RightFistCollisionBox->SetNotifyRigidBodyCollision(false);
+	AttackType = UAttackType::NOTATTACKING;
+}
+
+void ANPC::SpawnProjectile()
+{
+	
+	// try and fire a projectile
+	if (ProjectileClass == nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("No Projectile Class"));
+		return;
+	}
+	UWorld* const World = GetWorld();
+	if (!World) {
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("No World"));
+		return;
+	}
+
+	
+	const FRotator SpawnRotation = GetControlRotation();
+
+	// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+	const FVector SpawnLocation = 
+		(
+			(RightFistCollisionBox != nullptr) ? 
+			RightFistCollisionBox->GetComponentLocation() //+ SpawnRotation.RotateVector(attackOffset)
+			:	GetActorLocation()) + SpawnRotation.RotateVector(AttackOffset);
+
+	//Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+	// spawn the projectile at the muzzle
+	AFpsU5CppV1Projectile* projectile = World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+	projectile->SetProjectileDamage(GetMissileDamage());
 }
 
 UBehaviorTree* ANPC::GetBehaviorTree() const
 {
 	return BehaviourTree;
+}
+
+float ANPC::GetMeleeDamage()
+{
+	return FMath::RandRange(MinMeleeDamage, MaxMeleeDamage);
+}
+
+float ANPC::GetMissileDamage()
+{
+	return FMath::RandRange(MinMissileDamage, MaxMissileDamage);
 }
 
 // Called every frame
@@ -148,6 +201,9 @@ APatrolPath* ANPC::GetPatrolPath()
 void ANPC::MeleeAttack()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("PAOW!"));
+
+	AttackType = UAttackType::MELEE;
+
 	//TODO: Add CD -> Check Task
 	if(montage)
 	{
@@ -158,6 +214,7 @@ void ANPC::MeleeAttack()
 void ANPC::MissileAttack() 
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("PEW!"));
+	AttackType = UAttackType::MISSILE;
 	//TODO: Add CD -> Check Task
 	if (montage) 
 	{

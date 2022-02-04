@@ -6,6 +6,8 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
+#include "AttackType.h"
+#include "FpsU5CppV1/FpsU5CppV1Projectile.h"
 #include "NPC.generated.h"
 
 class APatrolPath;
@@ -38,18 +40,31 @@ public:
 	virtual void AttackStart();
 	virtual void AttackEnd();
 
+	virtual void SpawnProjectile();
+
 	virtual UBehaviorTree* GetBehaviorTree() const;
 	
-	float GetMeleeDamage() { return MeleeDamage; };
+	float GetMeleeDamage();
 
 	float GetMeleeRange() { return MeleeRange; };
 
-	float GetMissileDamage() { return MissileDamage; };
+	float GetMissileDamage();
 
 	float GetMissileRange() { return MissileRange; };
 
 	bool GetCanAttackMelee() { return CanAttackMelee; };
 	bool GetCanAttackRanged() { return CanAttackRanged; };
+
+	float GetWalkSpeed() {
+		return WalkSpeed;
+	};
+
+	
+	float GetRunSpeed() { return RunSpeed; };
+
+	virtual void SetMovementSpeed(float speed);
+
+	UAttackType GetAttackType() { return AttackType; };
 
 	virtual bool GetIsAwake() { return IsAwake; };
 
@@ -65,46 +80,19 @@ protected:
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
-		bool IsAwake = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
-		APatrolPath* PatrolPath;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
-		UAnimMontage* montage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		bool CanAttackMelee = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		float MeleeDamage = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		float MeleeRange = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		float MissileDamage = 50.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		float MissileRange = 3000.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		bool CanAttackRanged = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
-		bool Ambush = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
-		UBehaviorTree* BehaviourTree;
-	
-	/* Health & Damage */
+	/* Health & Armor */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float health = 100.0f;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float FullHealth;
 
+	/* Attack Header */
+	UAttackType AttackType = UAttackType::NOTATTACKING;
+	bool bCanDamagePlayer;
+
+	/* Attack Collision */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = true))
 		class UBoxComponent* RightFistCollisionBox;
 
@@ -116,8 +104,64 @@ private:
 	UFUNCTION()
 		void OnAttackOverlapEnd(UPrimitiveComponent* const overlappedComponent, AActor* const otherActor, UPrimitiveComponent* otherComponent, int const otherBodyIndex);
 
-	UPROPERTY(EditAnywhere, Category = Damage)
+	UPROPERTY(EditAnywhere, Category = Damage, meta = (AllowPrivateAccess = true))
 		TSubclassOf<UDamageType> Damage;
 
-	bool bCanDamagePlayer;
+	/** Projectile class to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = Projectile, meta = (AllowPrivateAccess = true))
+		TSubclassOf<class AFpsU5CppV1Projectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Projectile, meta = (AllowPrivateAccess = true))
+		FVector AttackOffset = FVector(100.0f, 0.0f, 100.0f);
+
+	/* Attack Stats */
+
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool IsAwake = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool CanAttackMelee = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MinMeleeDamage = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MaxMeleeDamage = 300.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MeleeRange = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool CanAttackRanged = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MinMissileDamage = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MaxMissileDamage = 250.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		float MissileRange = 3000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Damage, meta = (AllowPrivateAccess = true))
+		bool Ambush = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+		float WalkSpeed = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = true))
+		float RunSpeed = 600.0f;
+
+	/* Misc */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+		APatrolPath* PatrolPath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI, meta = (AllowPrivateAccess = true))
+		UBehaviorTree* BehaviourTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = true))
+		UAnimMontage* montage;
+
+	
+	
 };

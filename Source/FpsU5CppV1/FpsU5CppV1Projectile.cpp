@@ -30,8 +30,8 @@ AFpsU5CppV1Projectile::AFpsU5CppV1Projectile()
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
 	ProjectileMovement->UpdatedComponent = CollisionComp;
-	ProjectileMovement->InitialSpeed = 3000.f;
-	ProjectileMovement->MaxSpeed = 3000.f;
+	ProjectileMovement->InitialSpeed = InitialSpeed;//3000.f;
+	ProjectileMovement->MaxSpeed = MaxSpeed;//3000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
 
@@ -63,6 +63,10 @@ void AFpsU5CppV1Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherAct
 
 }
 
+void AFpsU5CppV1Projectile::SetProjectileDamage(float dmg) {
+	ProjectileDamage = dmg;
+}
+
 void AFpsU5CppV1Projectile::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                            UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -75,7 +79,7 @@ void AFpsU5CppV1Projectile::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, 
 	bCanApplyDamage = false;
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, TEXT("Projectile Overlap Begin"));
 
-	UGameplayStatics::ApplyPointDamage(OtherActor, 20.0f, GetActorLocation(), SweepResult, nullptr, this, BulletDamage);
+	UGameplayStatics::ApplyPointDamage(OtherActor, ProjectileDamage, GetActorLocation(), SweepResult, nullptr, this, BulletDamage);
 
 }
 

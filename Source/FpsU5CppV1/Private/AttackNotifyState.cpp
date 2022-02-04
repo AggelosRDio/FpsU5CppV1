@@ -4,6 +4,7 @@
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "NPC.h"
+#include "AttackType.h"
 
 void UAttackNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	float TotalDuration)
@@ -12,6 +13,11 @@ void UAttackNotifyState::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequ
 	{
 		if (auto const character = Cast<ANPC>(MeshComp->GetOwner()))
 		{
+			if (character->GetAttackType() == UAttackType::MISSILE)
+			{
+				character->SpawnProjectile();
+			}
+
 			character->AttackStart();
 		}
 	}

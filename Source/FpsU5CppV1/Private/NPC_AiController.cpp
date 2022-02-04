@@ -95,6 +95,7 @@ void ANPC_AiController::OnUpdated(TArray<AActor*> const& updatedActors)
 			if (isSensed && !npc->GetIsAwake())
 			{
 				npc->SetIsAwake(true);
+				npc->SetMovementSpeed(npc->GetRunSpeed()); //GetCharacterMovement()->MaxWalkSpeed = npc->GetRunSpeed();
 			}
 
 			BlackboardComponent->SetValueAsObject(BlackboardKeys::Player, UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));

@@ -94,30 +94,6 @@ AFpsU5CppV1Character::AFpsU5CppV1Character() //: WidgetComponent(CreateDefaultSu
 	//bUsingMotionControllers = true;
 
 	SetupStimulus();
-
-	//if(WidgetComponent)
-	//{
-	//	WidgetComponent->SetupAttachment(GetRootComponent());
-	//	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-	//	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 85.0f));
-
-	//	static ConstructorHelpers::FClassFinder<UUserWidget> widgetClass(TEXT("/Game/UI/UserHud_BP"));
-
-	//	if (widgetClass.Succeeded())
-	//	{
-	//		WidgetComponent->SetWidgetClass(widgetClass.Class);
-	//	}
-
-	//	auto const uw = Cast<UUserHudWidget>();
-
-	//	if (uw)
-	//	{
-	//		uw->AddToViewport();
-	//	}
-	//	
-
-	////	//widgetClass->
-	//}
 }
 
 void AFpsU5CppV1Character::Tick(float DeltaSeconds)
@@ -201,6 +177,9 @@ void AFpsU5CppV1Character::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &AFpsU5CppV1Character::OnDash);
 	PlayerInputComponent->BindAction("Dash", IE_Released, this, &AFpsU5CppV1Character::OnDashRelease);
 
+	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &AFpsU5CppV1Character::OnSlide);
+	PlayerInputComponent->BindAction("Slide", IE_Released, this, &AFpsU5CppV1Character::OnSlideRelease);
+
 	PlayerInputComponent->BindAction("AttackMelee", IE_Pressed, this, &AFpsU5CppV1Character::onMeleeAttack);
 
 	// Enable touchscreen input
@@ -225,6 +204,8 @@ void AFpsU5CppV1Character::OnResetVR()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
+
+
 
 void AFpsU5CppV1Character::BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
@@ -349,8 +330,10 @@ void AFpsU5CppV1Character::OnDash()
 		return;
 	}
 	
-	GetForwardDashVector();
-	GetRightDashVector();
+	auto const forwardVector = GetForwardDashVector();
+	auto const rightVector = GetRightDashVector();
+
+	DashVector = DashVector + forwardVector + rightVector;
 
 	LaunchCharacter(DashVector, false, false);
 
@@ -361,6 +344,37 @@ void AFpsU5CppV1Character::OnDash()
 
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Dashed"));
 	ResetDashVector();
+}
+
+void AFpsU5CppV1Character::OnSlide()
+{
+	if (bIsSliding) return;
+
+	if (!bIsLanded) 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Can't Slide while on air"));
+		return;
+	}
+
+	auto const forwardVector = GetForwardDashVector();
+	auto const rightVector = GetRightDashVector();
+
+	auto const slideVector = forwardVector + rightVector + FVector(0, 0, -100);
+
+	//GetCharacterMovement()->Br
+
+	LaunchCharacter(slideVector, false, false);
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Sliding"));
+
+	
+}
+
+void AFpsU5CppV1Character::OnSlideRelease()
+{
+	bIsSliding = false;
+
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Sliding Released"));
 }
 
 void AFpsU5CppV1Character::OnDashRelease()
@@ -394,9 +408,9 @@ void AFpsU5CppV1Character::RefreshDash()
 
 FVector AFpsU5CppV1Character::GetForwardDashVector()
 {
+	FVector vector;
 	const auto world = GetWorld();
-
-	if (world == nullptr) return DashVector;
+	if (world == nullptr) return vector;
 
 	auto data = world->GetFirstPlayerController()->PlayerInput->GetKeysForAxis("MoveForward");
 
@@ -406,17 +420,18 @@ FVector AFpsU5CppV1Character::GetForwardDashVector()
 
 		if (!bIsKeyForwardPressed) continue;
 
-		DashVector = (GetActorForwardVector() * fDashMultiplicationFactor * item.Scale) + DashVector;
+		vector = (GetActorForwardVector() * fDashMultiplicationFactor * item.Scale);
 	}
 
-	return DashVector;
+	return vector;
 }
 
 FVector AFpsU5CppV1Character::GetRightDashVector()
 {
+	FVector vector;
 	const auto world = GetWorld();
 
-	if (world == nullptr) return DashVector;
+	if (world == nullptr) return vector;
 
 	auto data = world->GetFirstPlayerController()->PlayerInput->GetKeysForAxis("MoveRight");
 
@@ -426,10 +441,10 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 
 		if (!bIsKeyPressed) continue;
 
-		DashVector = (GetActorRightVector() * fDashMultiplicationFactor * item.Scale) + DashVector;
+		vector = (GetActorRightVector() * fDashMultiplicationFactor * item.Scale);
 	}
 
-	return DashVector;
+	return vector;
 }
 
 
@@ -470,11 +485,11 @@ void AFpsU5CppV1Character::OnFire()
 	}
 
 	// try and play the sound if specified
-	/*if (FireSound != nullptr)
+	if (FireSound != nullptr)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 		UAISense_Hearing::ReportNoiseEvent(GetWorld(), GetActorLocation(), 1.0f, this, 0.0f, Tags::NoiseTag);
-	}*/
+	}
 
 	// try and play a firing animation if specified
 	if (FireAnimation != nullptr)
@@ -636,18 +651,6 @@ bool AFpsU5CppV1Character::PlayFlash()
 
 	return false;
 }
-
-//void AFpsU5CppV1Character::ReceivePointDamage(float Damage, const UDamageType* DamageType, FVector HitLocation,
-//	FVector HitNormal, UPrimitiveComponent* HitComponent, FName BoneName, FVector ShotFromDirection,
-//	AController* InstigatedBy, AActor* DamageCauser, const FHitResult& HitInfo)
-//{
-//	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Taking Damage"));
-//	SetCanBeDamaged(false);
-//	redFlash = true;
-//	UpdateHealth(-Damage);
-//	// start invincibility timer
-//	DamageTimer();
-//}
 
 float AFpsU5CppV1Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
