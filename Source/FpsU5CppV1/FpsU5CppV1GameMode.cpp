@@ -32,7 +32,7 @@ void AFpsU5CppV1GameMode::Tick(float DeltaSeconds)
 	
 	if (MyCharacter)
 	{
-		if(FMath::IsNearlyZero(MyCharacter->GetCurrentHealth(), 0.001f))
+		if(FMath::IsNearlyZero(MyCharacter->GetCharacterVitals().GetCurrentHealth(), 0.001f))
 		{
 			SetCurrentState(EGamePlayState::EGameOver);
 		}

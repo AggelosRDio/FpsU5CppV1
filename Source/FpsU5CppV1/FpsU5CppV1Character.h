@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -16,81 +14,162 @@ class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
 
+USTRUCT(BlueprintType)
+struct FCharacterAmmo
+{
+	GENERATED_BODY()
+
+	/* Ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int ShellAmmo = 10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int ShellAmmoCap = 24;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int BulletAmmo = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int BulletAmmoCap = 180;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int EnergyAmmo = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int EnergyAmmoCap = 250;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int RocketAmmo = 10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
+		int RocketAmmoCap = 13;
+
+	FCharacterAmmo()
+	{
+		ShellAmmoCap = 24;
+		ShellAmmo = ShellAmmoCap;
+		BulletAmmoCap = 180;
+		BulletAmmo = BulletAmmoCap;
+		EnergyAmmoCap = 250;
+		EnergyAmmo = EnergyAmmoCap;
+		RocketAmmoCap = 13;
+		RocketAmmo = RocketAmmoCap;
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FCharacterVitals 
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float FullHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float CurrentHealth = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+		float HealthPercentage = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
+		float PreviousHealth;
+public:
+	float GetCurrentHealth() const { return CurrentHealth; };
+	float GetMaxHealth() const { return FullHealth; };
+	float GetHealthPercentage() const { return HealthPercentage; };
+	void SetCurrentHealth(float const value) { CurrentHealth = value; };
+	void UpdateCurrentHealth(float const value) { 
+		CurrentHealth += value;
+		CurrentHealth = FMath::Clamp(CurrentHealth, 0.0f, FullHealth);
+		HealthPercentage = CurrentHealth / FullHealth;
+	};
+
+	//FCharacterVitals() { }
+};
+
 UCLASS(config=Game)
 class AFpsU5CppV1Character : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* Mesh1P;
-
-	/** Gun mesh: 1st person view (seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USkeletalMeshComponent* FP_Gun;
-
-	/** Location on gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USceneComponent* FP_MuzzleLocation;
-
-	/** Gun mesh: VR view (attached to the VR controller directly, no arm, just the actual gun) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USkeletalMeshComponent* VR_Gun;
-
-	/** Location on VR gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	USceneComponent* VR_MuzzleLocation;
-
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
-
-	/** Motion controller (right hand) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UMotionControllerComponent* R_MotionController;
-
-	/** Motion controller (left hand) */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UMotionControllerComponent* L_MotionController;
-
 public:
 	AFpsU5CppV1Character();
 	
+	FCharacterVitals GetCharacterVitals() const { return CharacterVitals; };
+
+	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+		float BaseTurnRate;
+
+	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+		float BaseLookUpRate;
+
+	/** Gun muzzle's offset from the characters location */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		FVector GunOffset;
+
+	/** Projectile class to spawn */
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+		TSubclassOf<class AFpsU5CppV1Projectile> ProjectileClass;
+
+	/** Sound to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		USoundBase* FireSound;
+
+	/** AnimMontage to play each time we fire */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		UAnimMontage* FireAnimation;
+
+	/** Whether to use motion controller location for aiming. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		uint8 bUsingMotionControllers : 1;
+
+	/* Health & HUD */
+
+	UFUNCTION(BlueprintPure, Category = Health)
+		float GetHealth();
+	UFUNCTION(BlueprintPure, Category = Health)
+		FText GetHealthIntText();
+	//UFUNCTION(BlueprintPure, Category = Health)
+	//	float GetMagic();
+	//UFUNCTION(BlueprintPure, Category = Health)
+	//	FText GetMagicIntText();
+
+	UFUNCTION()
+		void DamageTimer();
+
+	UFUNCTION()
+		void SetDamageState();
+
+	/*UFUNCTION()
+		void SetMagicValue();
+
+	UFUNCTION()
+		void SetMagicState();*/
+
+	UFUNCTION()
+		void SetMagicChange(float value);
+
+	UFUNCTION()
+		void UpdateMagic();
+
+	UFUNCTION(BlueprintPure, Category = Health)
+		bool PlayFlash();
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		UMaterialInterface* GunDefaultMaterial;
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		UMaterialInterface* GunOverheatMaterial;
+
+	UFUNCTION(BlueprintCallable, Category = Health)
+		void UpdateHealth(float healthChange);
+
+	/** Returns Mesh1P subobject **/
+	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
+	/** Returns FirstPersonCameraComponent subobject **/
+	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 
-public:
-	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseTurnRate;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
-	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseLookUpRate;
-
-	/** Gun muzzle's offset from the characters location */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	FVector GunOffset;
-
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category=Projectile)
-	TSubclassOf<class AFpsU5CppV1Projectile> ProjectileClass;
-
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
-	USoundBase* FireSound;
-
-	/** AnimMontage to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	UAnimMontage* FireAnimation;
-
-	/** Whether to use motion controller location for aiming. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	uint8 bUsingMotionControllers : 1;
-
-protected:
-	
 	/** Fires a projectile. */
 	void OnFire();
 
@@ -146,14 +225,7 @@ protected:
 	 */
 	bool EnableTouchscreenMovement(UInputComponent* InputComponent);
 
-public:
-	/** Returns Mesh1P subobject **/
-	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
-	/** Returns FirstPersonCameraComponent subobject **/
-	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-
 	/* Mobility */
-protected:
 	virtual void Landed(const FHitResult& Hit) override;
 	virtual void Jump() override;
 
@@ -196,24 +268,6 @@ private:
 
 	bool bIsWeaponFiring;
 
-	/* Ammo */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int ShellAmmo = 10;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int ShellAmmoCap = 24;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int BulletAmmo = 100;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int BulletAmmoCap = 180;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int EnergyAmmo = 100;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int EnergyAmmoCap = 250;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int RocketAmmo = 10;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		int RocketAmmoCap = 13;
-
 	/* Perception */
 	class UAIPerceptionStimuliSourceComponent* stimulus;
 
@@ -224,25 +278,8 @@ private:
 
 	void onMeleeAttack();
 
-	/* Health & HUD */
-public:
-	float GetCurrentHealth() const;
-	float GetMaxHealth() const;
-	void SetCurrentHealth(float const value);
-
-private:
-	//class UWidgetComponent* WidgetComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float FullHealth;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float CurrentHealth = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float HealthPercentage = 100.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
-		float PreviousHealth;
+		FCharacterVitals CharacterVitals;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
 		float FullMagic = 100.0f;
@@ -274,51 +311,44 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
 		FTimerHandle MagicTimerHandle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
+		FCharacterAmmo CharacterAmmo;
+
 	float CurveFloatValue;
 	float TimelineValue;
 	bool bCanUseMagic;
 
-public:
-	UFUNCTION(BlueprintPure, Category = Health)
-		float GetHealth();
-	UFUNCTION(BlueprintPure, Category = Health)
-		FText GetHealthIntText();
-	UFUNCTION(BlueprintPure, Category = Health)
-		float GetMagic();
-	UFUNCTION(BlueprintPure, Category = Health)
-		FText GetMagicIntText();
+	/** Pawn mesh: 1st person view (arms; seen only by self) */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USkeletalMeshComponent* Mesh1P;
 
-	UFUNCTION()
-		void DamageTimer();
+	/** Gun mesh: 1st person view (seen only by self) */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USkeletalMeshComponent* FP_Gun;
 
-	UFUNCTION()
-		void SetDamageState();
+	/** Location on gun mesh where projectiles should spawn. */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USceneComponent* FP_MuzzleLocation;
 
-	UFUNCTION()
-		void SetMagicValue();
+	/** Gun mesh: VR view (attached to the VR controller directly, no arm, just the actual gun) */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USkeletalMeshComponent* VR_Gun;
 
-	UFUNCTION()
-		void SetMagicState();
+	/** Location on VR gun mesh where projectiles should spawn. */
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USceneComponent* VR_MuzzleLocation;
 
-	UFUNCTION()
-		void SetMagicChange(float value);
+	/** First person camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		UCameraComponent* FirstPersonCameraComponent;
 
-	UFUNCTION()
-		void UpdateMagic();
+	/** Motion controller (right hand) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		UMotionControllerComponent* R_MotionController;
 
-	UFUNCTION(BlueprintPure, Category = Health)
-		bool PlayFlash();
-
-	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
-		UMaterialInterface* GunDefaultMaterial;
-
-	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
-		UMaterialInterface* GunOverheatMaterial;
-
-	UFUNCTION(BlueprintCallable, Category = Health)
-		void UpdateHealth(float healthChange);
-protected:
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	/** Motion controller (left hand) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		UMotionControllerComponent* L_MotionController;
 
 };
 

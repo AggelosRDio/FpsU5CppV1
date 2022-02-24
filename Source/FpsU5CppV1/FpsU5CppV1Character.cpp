@@ -128,14 +128,16 @@ void AFpsU5CppV1Character::BeginPlay()
 	bIsLanded = true;
 	DoubleJumpVector = FVector(0.0f, 0.0f, 300.0f);
 
-	FullHealth = 1000.0f;
-	CurrentHealth = FullHealth;
-	HealthPercentage = 1.0f;
-	PreviousHealth = HealthPercentage;
+	//CharacterVitals = malloc()
+	//FullHealth = //1000.0f;
+	//CurrentHealth = FullHealth;
+	//HealthPercentage = 1.0f;
+	//PreviousHealth = HealthPercentage;
+	//CharacterVitals = new FCharacterVitals();
 	SetCanBeDamaged(true);
 	//bCanBeDamaged = true;
 
-	FullMagic = 100.0f;
+	/*FullMagic = 100.0f;
 	CurrentMagic = 100.0f;
 	MagicPercentage = 1.0f;
 	PreviousMagic = MagicPercentage;
@@ -153,7 +155,7 @@ void AFpsU5CppV1Character::BeginPlay()
 		MyTimeline.AddInterpFloat(MagicCurve, timelineCallback);
 		MyTimeline.SetTimelineFinishedFunc(timelineFinishedCallback);
 		
-	}
+	}*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -453,9 +455,11 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 void AFpsU5CppV1Character::OnFire()
 {
 	// try and fire a projectile
-	if (ProjectileClass == nullptr || FMath::IsNearlyZero(CurrentMagic, 0.001f) || !bCanUseMagic)
-		return;
+	/*if (ProjectileClass == nullptr || FMath::IsNearlyZero(CurrentMagic, 0.001f) || !bCanUseMagic)
+		return;*/
 
+	if (ProjectileClass == nullptr)
+		return;
 
 	UWorld* const World = GetWorld();
 	if (World != nullptr)
@@ -504,9 +508,9 @@ void AFpsU5CppV1Character::OnFire()
 
 	//TODO: Reference Timers below to fix Dash
 	MyTimeline.Stop();
-	GetWorldTimerManager().ClearTimer(MagicTimerHandle);
-	SetMagicChange(-20.0f);
-	GetWorldTimerManager().SetTimer(MagicTimerHandle, this, &AFpsU5CppV1Character::UpdateMagic, 5.0f, false);
+	//GetWorldTimerManager().ClearTimer(MagicTimerHandle);
+	//SetMagicChange(-20.0f);
+	//GetWorldTimerManager().SetTimer(MagicTimerHandle, this, &AFpsU5CppV1Character::UpdateMagic, 5.0f, false);
 
 }
 
@@ -542,29 +546,29 @@ void AFpsU5CppV1Character::onMeleeAttack()
 	}*/
 }
 
-float AFpsU5CppV1Character::GetCurrentHealth() const
-{
-	return CurrentHealth;
-}
-
-float AFpsU5CppV1Character::GetMaxHealth() const
-{
-	return FullHealth;
-}
-
-void AFpsU5CppV1Character::SetCurrentHealth(float const value)
-{
-	CurrentHealth = value;
-}
+//float AFpsU5CppV1Character::GetCurrentHealth() const
+//{
+//	return CurrentHealth;
+//}
+//
+//float AFpsU5CppV1Character::GetMaxHealth() const
+//{
+//	return FullHealth;
+//}
+//
+//void AFpsU5CppV1Character::SetCurrentHealth(float const value)
+//{
+//	CurrentHealth = value;
+//}
 
 float AFpsU5CppV1Character::GetHealth()
 {
-	return HealthPercentage;
+	return CharacterVitals.GetHealthPercentage();// .HealthPercentage;  // HealthPercentage;
 }
 
 FText AFpsU5CppV1Character::GetHealthIntText()
 {
-	const int hp = FMath::RoundHalfFromZero(HealthPercentage * 100);
+	const int hp = FMath::RoundHalfFromZero(CharacterVitals.GetHealthPercentage() * 100);
 	const FString hps = FString::FromInt(hp);
 	const FString healthHud = hps + FString(TEXT("%"));
 	FText hpText = FText::FromString(healthHud);
@@ -572,21 +576,21 @@ FText AFpsU5CppV1Character::GetHealthIntText()
 	return hpText;
 }
 
-float AFpsU5CppV1Character::GetMagic()
-{
-	return MagicPercentage;
-}
+//float AFpsU5CppV1Character::GetMagic()
+//{
+//	return MagicPercentage;
+//}
 
-FText AFpsU5CppV1Character::GetMagicIntText()
-{
-	const int mp = FMath::RoundHalfFromZero(MagicPercentage * 100);
-	const FString mps = FString::FromInt(mp);
-	const FString fullMps = FString::FromInt(FullMagic);
-	const FString magicHud = mps + FString(TEXT("/") + fullMps);
-	FText mpText = FText::FromString(magicHud);
-
-	return mpText;
-}
+//FText AFpsU5CppV1Character::GetMagicIntText()
+//{
+//	const int mp = FMath::RoundHalfFromZero(MagicPercentage * 100);
+//	const FString mps = FString::FromInt(mp);
+//	const FString fullMps = FString::FromInt(FullMagic);
+//	const FString magicHud = mps + FString(TEXT("/") + fullMps);
+//	FText mpText = FText::FromString(magicHud);
+//
+//	return mpText;
+//}
 
 void AFpsU5CppV1Character::DamageTimer()
 {
@@ -598,26 +602,26 @@ void AFpsU5CppV1Character::SetDamageState()
 	SetCanBeDamaged(true);
 }
 
-void AFpsU5CppV1Character::SetMagicValue()
-{
-	TimelineValue = MyTimeline.GetPlaybackPosition();
-	CurveFloatValue = PreviousMagic + MagicValue * MagicCurve->GetFloatValue(TimelineValue);
-	CurrentMagic = CurveFloatValue * FullHealth;
-	CurrentMagic = FMath::Clamp(CurrentMagic, 0.0f, FullMagic);
-	MagicPercentage = CurveFloatValue;
-	MagicPercentage = FMath::Clamp(MagicPercentage, 0.0f, 1.0f);
-}
+//void AFpsU5CppV1Character::SetMagicValue()
+//{
+//	TimelineValue = MyTimeline.GetPlaybackPosition();
+//	CurveFloatValue = PreviousMagic + MagicValue * MagicCurve->GetFloatValue(TimelineValue);
+//	CurrentMagic = CurveFloatValue * FullHealth;
+//	CurrentMagic = FMath::Clamp(CurrentMagic, 0.0f, FullMagic);
+//	MagicPercentage = CurveFloatValue;
+//	MagicPercentage = FMath::Clamp(MagicPercentage, 0.0f, 1.0f);
+//}
 
-void AFpsU5CppV1Character::SetMagicState()
-{
-	bCanUseMagic = true;
-	MagicValue = 0.0f;
-
-	if(GunDefaultMaterial)
-	{
-		FP_Gun->SetMaterial(0, GunDefaultMaterial);
-	}
-}
+//void AFpsU5CppV1Character::SetMagicState()
+//{
+//	bCanUseMagic = true;
+//	MagicValue = 0.0f;
+//
+//	if(GunDefaultMaterial)
+//	{
+//		FP_Gun->SetMaterial(0, GunDefaultMaterial);
+//	}
+//}
 
 void AFpsU5CppV1Character::SetMagicChange(float value)
 {
@@ -664,9 +668,7 @@ float AFpsU5CppV1Character::TakeDamage(float DamageAmount, struct FDamageEvent c
 
 void AFpsU5CppV1Character::UpdateHealth(float healthChange)
 {
-	CurrentHealth += healthChange;
-	CurrentHealth = FMath::Clamp(CurrentHealth, 0.0f, FullHealth);
-	HealthPercentage = CurrentHealth / FullHealth;
+	CharacterVitals.UpdateCurrentHealth(healthChange);
 }
 
 void AFpsU5CppV1Character::Landed(const FHitResult& Hit)
