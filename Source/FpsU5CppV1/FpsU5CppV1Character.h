@@ -4,7 +4,11 @@
 #include "GameFramework/Character.h"
 #include "Animation/AnimMontage.h"
 #include "Components/TimelineComponent.h"
+#include <FpsU5CppV1/Public/ActorStructs.h>
+#include <FpsU5CppV1/Public/BaseWeapon.h>
 #include "FpsU5CppV1Character.generated.h"
+
+
 
 class UInputComponent;
 class USkeletalMeshComponent;
@@ -19,35 +23,33 @@ struct FCharacterAmmo
 {
 	GENERATED_BODY()
 
-	/* Ammo */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int ShellAmmo = 10;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int ShellAmmoCap = 24;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int BulletAmmo = 100;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int BulletAmmoCap = 180;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int EnergyAmmo = 100;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int EnergyAmmoCap = 250;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int RocketAmmo = 10;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo)
-		int RocketAmmoCap = 13;
+		/* Ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FActorIntStats Shells;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FActorIntStats Bullets;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FActorIntStats Energy;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FActorIntStats Rockets;
 
 	FCharacterAmmo()
 	{
-		ShellAmmoCap = 24;
-		ShellAmmo = ShellAmmoCap;
-		BulletAmmoCap = 180;
-		BulletAmmo = BulletAmmoCap;
-		EnergyAmmoCap = 250;
-		EnergyAmmo = EnergyAmmoCap;
-		RocketAmmoCap = 13;
-		RocketAmmo = RocketAmmoCap;
+		Shells.MaxValue = 24;
+		Shells.Value = Shells.MaxValue;
+		Bullets.MaxValue = 180;
+		Bullets.Value = Bullets.MaxValue;
+		Energy.MaxValue = 250;
+		Energy.Value = Energy.MaxValue;
+		Rockets.MaxValue = 13;
+		Rockets.Value = Rockets.MaxValue;
 	}
+
+public:
+	int GetCurrentAmmoValue(UWeaponAmmoType ammoType);
+	int GetMaxAmmoValue(UWeaponAmmoType ammoType);
+	float GetAmmoValuePercentage(UWeaponAmmoType ammoType);
+	bool UpdateAmmoValue(int value, UWeaponAmmoType ammoType);
 };
 
 USTRUCT(BlueprintType)
@@ -124,28 +126,17 @@ public:
 		float GetHealth();
 	UFUNCTION(BlueprintPure, Category = Health)
 		FText GetHealthIntText();
-	//UFUNCTION(BlueprintPure, Category = Health)
-	//	float GetMagic();
-	//UFUNCTION(BlueprintPure, Category = Health)
-	//	FText GetMagicIntText();
+
+	UFUNCTION(BlueprintPure, Category = Weapon)
+		float GetEquippedWeaponAmmo();
+	UFUNCTION(BlueprintPure, Category = Weapon)
+		FText GetEquippedWeaponAmmoText();
 
 	UFUNCTION()
 		void DamageTimer();
 
 	UFUNCTION()
 		void SetDamageState();
-
-	/*UFUNCTION()
-		void SetMagicValue();
-
-	UFUNCTION()
-		void SetMagicState();*/
-
-	UFUNCTION()
-		void SetMagicChange(float value);
-
-	UFUNCTION()
-		void UpdateMagic();
 
 	UFUNCTION(BlueprintPure, Category = Health)
 		bool PlayFlash();
@@ -163,6 +154,17 @@ public:
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		TArray<ABaseWeapon*> Weapons;
+
+	UPROPERTY(EditAnywhere, Category = Health, meta = (AllowPrivateAccess = true))
+		int WeaponIndex;
+
+	void SwitchWeapon();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
+		void SwitchWeaponMesh(int index);
 
 protected:
 	virtual void BeginPlay() override;
@@ -234,6 +236,8 @@ private:
 	int nJumpCount;
 	FVector DoubleJumpVector;
 
+	bool CanFire();
+
 
 	/* DASH */
 	void OnDash();
@@ -278,52 +282,36 @@ private:
 
 	void onMeleeAttack();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CharacterStats, meta = (AllowPrivateAccess = true))
 		FCharacterVitals CharacterVitals;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float FullMagic = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float CurrentMagic = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Magic", meta = (AllowPrivateAccess = true))
-		float MagicValue;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Health, meta = (AllowPrivateAccess = true))
-		float MagicPercentage = 100.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CharacterStats", meta = (AllowPrivateAccess = true))
 		float PreviousMagic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = true))
 		bool redFlash;
 
-	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
-		UCurveFloat* MagicCurve;
-
-	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, Category = "CharacterStats", meta = (AllowPrivateAccess = true))
 		FTimeline MyTimeline;
 
-	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, Category = "CharacterStats", meta = (AllowPrivateAccess = true))
 		FTimerHandle MemberTimerHandle;
 
-	UPROPERTY(EditAnywhere, Category = "Health", meta = (AllowPrivateAccess = true))
-		FTimerHandle MagicTimerHandle;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Ammo, meta = (AllowPrivateAccess = true))
-		FCharacterAmmo CharacterAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CharacterStats, meta = (AllowPrivateAccess = true))
+		FCharacterAmmo AmmoInventory;
 
 	float CurveFloatValue;
 	float TimelineValue;
-	bool bCanUseMagic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon, meta = (AllowPrivateAccess = true))
+		FPlayerWeapon EquippedWeapon;
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 		USkeletalMeshComponent* Mesh1P;
 
 	/** Gun mesh: 1st person view (seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	UPROPERTY(BlueprintReadWrite, Category = Mesh, meta = (AllowPrivateAccess = true))
 		USkeletalMeshComponent* FP_Gun;
 
 	/** Location on gun mesh where projectiles should spawn. */

@@ -11,11 +11,15 @@
 AFpsU5CppV1HUD::AFpsU5CppV1HUD()
 {
 	// Set the crosshair texture
-	static ConstructorHelpers::FObjectFinder<UTexture2D> CrosshairTexObj(TEXT("/Game/FirstPerson/Textures/FirstPersonCrosshair"));
+	static ConstructorHelpers::FObjectFinder<UTexture2D> CrosshairTexObj(TEXT("/Game/Resources/FirstPerson/Textures/FirstPersonCrosshair"));
 	CrosshairTex = CrosshairTexObj.Object;
 
 	static ConstructorHelpers::FClassFinder<UUserWidget> HealthbarObj(TEXT("/Game/UI/Health_UI"));
 	HudWidgetClass = HealthbarObj.Class;
+
+	/*static ConstructorHelpers::FClassFinder<UUserWidget> HealthbarObj(TEXT("/Game/UI/AmmoUI'"));
+	HudAmmoWidgetClass = HealthbarObj.Class;*/
+	
 }
 
 

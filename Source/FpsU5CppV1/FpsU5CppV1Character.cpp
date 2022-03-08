@@ -94,6 +94,10 @@ AFpsU5CppV1Character::AFpsU5CppV1Character() //: WidgetComponent(CreateDefaultSu
 	//bUsingMotionControllers = true;
 
 	SetupStimulus();
+
+	WeaponIndex = 0;
+	//EquippedWeapon.
+	//EquippedWeapon->
 }
 
 void AFpsU5CppV1Character::Tick(float DeltaSeconds)
@@ -102,6 +106,50 @@ void AFpsU5CppV1Character::Tick(float DeltaSeconds)
 
 	MyTimeline.TickTimeline(DeltaSeconds);
 }
+
+void AFpsU5CppV1Character::SwitchWeapon()
+{
+	switch (WeaponIndex)
+	{
+		case 0: {
+			/*if (Weapons.Num() > 1) {
+				WeaponIndex = 1;
+				SwitchWeaponMesh(WeaponIndex);
+				break;
+			}
+			WeaponIndex = 0;
+			SwitchWeaponMesh(WeaponIndex);*/
+			break;
+		}
+		case 1: {
+			/*if (Weapons.Num() > 2) {
+				WeaponIndex = 2;
+				SwitchWeaponMesh(WeaponIndex);
+				break;
+			}
+			WeaponIndex = 0;
+			SwitchWeaponMesh(WeaponIndex);*/
+			break;
+		}
+		case 2: {
+			/*if (Weapons.Num() > 3) {
+				WeaponIndex = 3;
+				SwitchWeaponMesh(WeaponIndex);
+				break;
+			}
+			WeaponIndex = 0;
+			SwitchWeaponMesh(WeaponIndex);*/
+			break;
+		}
+		default: break;
+	}
+
+}
+//
+//void AFpsU5CppV1Character::SwitchWeaponMesh(int index)
+//{
+//
+//}
 
 void AFpsU5CppV1Character::BeginPlay()
 {
@@ -128,34 +176,7 @@ void AFpsU5CppV1Character::BeginPlay()
 	bIsLanded = true;
 	DoubleJumpVector = FVector(0.0f, 0.0f, 300.0f);
 
-	//CharacterVitals = malloc()
-	//FullHealth = //1000.0f;
-	//CurrentHealth = FullHealth;
-	//HealthPercentage = 1.0f;
-	//PreviousHealth = HealthPercentage;
-	//CharacterVitals = new FCharacterVitals();
 	SetCanBeDamaged(true);
-	//bCanBeDamaged = true;
-
-	/*FullMagic = 100.0f;
-	CurrentMagic = 100.0f;
-	MagicPercentage = 1.0f;
-	PreviousMagic = MagicPercentage;
-	
-	bCanUseMagic = true;
-
-	if(MagicCurve)
-	{
-		FOnTimelineFloat timelineCallback;
-		FOnTimelineEventStatic timelineFinishedCallback;
-
-		timelineCallback.BindUFunction(this, FName("SetMagicState"));
-		timelineFinishedCallback.BindUFunction(this, FName("SetMagicState"));
-
-		MyTimeline.AddInterpFloat(MagicCurve, timelineCallback);
-		MyTimeline.SetTimelineFinishedFunc(timelineFinishedCallback);
-		
-	}*/
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -181,6 +202,8 @@ void AFpsU5CppV1Character::SetupPlayerInputComponent(class UInputComponent* Play
 
 	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &AFpsU5CppV1Character::OnSlide);
 	PlayerInputComponent->BindAction("Slide", IE_Released, this, &AFpsU5CppV1Character::OnSlideRelease);
+
+	PlayerInputComponent->BindAction("SelectNextWeapon", IE_Pressed, this, &AFpsU5CppV1Character::SwitchWeapon);
 
 	PlayerInputComponent->BindAction("AttackMelee", IE_Pressed, this, &AFpsU5CppV1Character::onMeleeAttack);
 
@@ -455,40 +478,48 @@ FVector AFpsU5CppV1Character::GetRightDashVector()
 void AFpsU5CppV1Character::OnFire()
 {
 	// try and fire a projectile
-	/*if (ProjectileClass == nullptr || FMath::IsNearlyZero(CurrentMagic, 0.001f) || !bCanUseMagic)
-		return;*/
-
 	if (ProjectileClass == nullptr)
 		return;
 
+	if (!CanFire()) return;
+
 	UWorld* const World = GetWorld();
-	if (World != nullptr)
+	if (World == nullptr)
 	{
-		if (bUsingMotionControllers)
-		{
-			const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
-			const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
-			World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-		}
-		else
-		{
-			const FRotator SpawnRotation = GetControlRotation();
-			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-			const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
+		return;
+	}
+	// VR SECTION
+	/*if (bUsingMotionControllers)
+	{
+		const FRotator SpawnRotation = VR_MuzzleLocation->GetComponentRotation();
+		const FVector SpawnLocation = VR_MuzzleLocation->GetComponentLocation();
+		World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+	}
+	else
+	{*/
+	const FRotator SpawnRotation = GetControlRotation();
+	// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+	const FVector SpawnLocation = ((FP_MuzzleLocation != nullptr) ? FP_MuzzleLocation->GetComponentLocation() : GetActorLocation()) + SpawnRotation.RotateVector(GunOffset);
 
-			//Set Spawn Collision Handling Override
-			FActorSpawnParameters ActorSpawnParams;
-			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+	//Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
 
-			// spawn the projectile at the muzzle
-			World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			//AFpsU5CppV1Projectile* projectile = World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			//projectile->GetCollisionComp()->SetGenerateOverlapEvents(true);
+	auto const projectilesShot = EquippedWeapon.GetProjectilesFiredPerShot();
 
-		}
+	for (auto i = 0; i < projectilesShot; i++) {
+		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Emerald, TEXT("Firing Primary"));
+		World->SpawnActor<AFpsU5CppV1Projectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 	}
 
-	// try and play the sound if specified
+	auto const firedProjectile = AmmoInventory.UpdateAmmoValue(-1*projectilesShot, EquippedWeapon.GetAmmoType());
+
+	// spawn the projectile at the muzzle
+
+	//}
+
+
+// try and play the sound if specified
 	if (FireSound != nullptr)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
@@ -514,6 +545,17 @@ void AFpsU5CppV1Character::OnFire()
 
 }
 
+bool AFpsU5CppV1Character::CanFire() 
+{
+	if (bIsWeaponFiring) return false;
+
+	auto const ammoType = EquippedWeapon.GetAmmoType();
+	auto const projectilesShot = EquippedWeapon.GetProjectilesFiredPerShot();
+	auto const ammoValue = AmmoInventory.GetCurrentAmmoValue(ammoType);
+
+	return ammoValue >= projectilesShot;
+}
+
 void AFpsU5CppV1Character::OnAlternateFire()
 {
 	bIsWeaponFiring = true;
@@ -533,37 +575,16 @@ void AFpsU5CppV1Character::SetupStimulus()
 	stimulus = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("Stimulus"));
 	stimulus->RegisterForSense(TSubclassOf<UAISense_Sight>());
 	stimulus->RegisterWithPerceptionSystem();
-
 }
 
 void AFpsU5CppV1Character::onMeleeAttack()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, TEXT("Melee Attack Placeholder"));
-
-	/*if (montage)
-	{
-		PlayAnimMontage(montage);
-	}*/
 }
-
-//float AFpsU5CppV1Character::GetCurrentHealth() const
-//{
-//	return CurrentHealth;
-//}
-//
-//float AFpsU5CppV1Character::GetMaxHealth() const
-//{
-//	return FullHealth;
-//}
-//
-//void AFpsU5CppV1Character::SetCurrentHealth(float const value)
-//{
-//	CurrentHealth = value;
-//}
 
 float AFpsU5CppV1Character::GetHealth()
 {
-	return CharacterVitals.GetHealthPercentage();// .HealthPercentage;  // HealthPercentage;
+	return CharacterVitals.GetHealthPercentage();
 }
 
 FText AFpsU5CppV1Character::GetHealthIntText()
@@ -576,21 +597,23 @@ FText AFpsU5CppV1Character::GetHealthIntText()
 	return hpText;
 }
 
-//float AFpsU5CppV1Character::GetMagic()
-//{
-//	return MagicPercentage;
-//}
+float AFpsU5CppV1Character::GetEquippedWeaponAmmo()
+{
+	auto const ammoType = EquippedWeapon.GetAmmoType();
 
-//FText AFpsU5CppV1Character::GetMagicIntText()
-//{
-//	const int mp = FMath::RoundHalfFromZero(MagicPercentage * 100);
-//	const FString mps = FString::FromInt(mp);
-//	const FString fullMps = FString::FromInt(FullMagic);
-//	const FString magicHud = mps + FString(TEXT("/") + fullMps);
-//	FText mpText = FText::FromString(magicHud);
-//
-//	return mpText;
-//}
+	return AmmoInventory.GetAmmoValuePercentage(ammoType);
+}
+
+FText AFpsU5CppV1Character::GetEquippedWeaponAmmoText()
+{
+	auto const ammoType = EquippedWeapon.GetAmmoType();
+
+	const int ammo = AmmoInventory.GetCurrentAmmoValue(ammoType);
+	const FString ammoString = FString::FromInt(ammo);
+	FText ammoText = FText::FromString(ammoString);
+
+	return ammoText;
+}
 
 void AFpsU5CppV1Character::DamageTimer()
 {
@@ -600,49 +623,6 @@ void AFpsU5CppV1Character::DamageTimer()
 void AFpsU5CppV1Character::SetDamageState()
 {
 	SetCanBeDamaged(true);
-}
-
-//void AFpsU5CppV1Character::SetMagicValue()
-//{
-//	TimelineValue = MyTimeline.GetPlaybackPosition();
-//	CurveFloatValue = PreviousMagic + MagicValue * MagicCurve->GetFloatValue(TimelineValue);
-//	CurrentMagic = CurveFloatValue * FullHealth;
-//	CurrentMagic = FMath::Clamp(CurrentMagic, 0.0f, FullMagic);
-//	MagicPercentage = CurveFloatValue;
-//	MagicPercentage = FMath::Clamp(MagicPercentage, 0.0f, 1.0f);
-//}
-
-//void AFpsU5CppV1Character::SetMagicState()
-//{
-//	bCanUseMagic = true;
-//	MagicValue = 0.0f;
-//
-//	if(GunDefaultMaterial)
-//	{
-//		FP_Gun->SetMaterial(0, GunDefaultMaterial);
-//	}
-//}
-
-void AFpsU5CppV1Character::SetMagicChange(float value)
-{
-	bCanUseMagic = false;
-	PreviousMagic = MagicPercentage;
-	MagicValue = value / FullMagic;
-
-	if(GunOverheatMaterial)
-	{
-		FP_Gun->SetMaterial(0, GunOverheatMaterial);
-	}
-
-	MyTimeline.PlayFromStart();
-}
-
-void AFpsU5CppV1Character::UpdateMagic()
-{
-	PreviousMagic = MagicPercentage;
-	MagicPercentage = CurrentMagic / FullMagic;
-	MagicValue = 1.0f;
-	MyTimeline.PlayFromStart();
 }
 
 bool AFpsU5CppV1Character::PlayFlash()
@@ -701,3 +681,100 @@ void AFpsU5CppV1Character::Jump()
 	nJumpCount++;
 
 }
+
+int FCharacterAmmo::GetCurrentAmmoValue(UWeaponAmmoType ammoType)
+{
+	switch (ammoType)
+	{
+	case UWeaponAmmoType::Shell: {
+		return Shells.Value;
+	}
+	case UWeaponAmmoType::Bullet: {
+		return Bullets.Value;
+	}
+	case UWeaponAmmoType::Energy: {
+		return Energy.Value;
+	}
+	case UWeaponAmmoType::Rocket: {
+		return Rockets.Value;
+	}
+	case UWeaponAmmoType::Melee: {
+		return 0;
+	}
+	default: return 0;
+	}
+}
+
+int FCharacterAmmo::GetMaxAmmoValue(UWeaponAmmoType ammoType) {
+	switch (ammoType)
+	{
+	case UWeaponAmmoType::Shell: {
+		return Shells.MaxValue;
+	}
+	case UWeaponAmmoType::Bullet: {
+		return Bullets.MaxValue;
+	}
+	case UWeaponAmmoType::Energy: {
+		return Energy.MaxValue;
+	}
+	case UWeaponAmmoType::Rocket: {
+		return Rockets.MaxValue;
+	}
+	case UWeaponAmmoType::Melee: {
+		return 0;
+	}
+	default: return 0;
+	}
+}
+
+float FCharacterAmmo::GetAmmoValuePercentage(UWeaponAmmoType ammoType)
+{
+	auto const ammoCap = GetMaxAmmoValue(ammoType);
+
+	if (ammoCap <= 0) return 0.0f;
+
+	auto const ammo = GetCurrentAmmoValue(ammoType);
+
+	if (ammo <= 0) return 0;
+
+	return static_cast<float>(ammo) / ammoCap;
+}
+
+bool FCharacterAmmo::UpdateAmmoValue(int value, UWeaponAmmoType ammoType) 
+{
+	auto const ammoValueMax = GetMaxAmmoValue(ammoType);
+	auto const ammoValue = GetCurrentAmmoValue(ammoType);
+	
+	if (ammoValueMax == ammoValue) return false;
+
+	int newAmmoValue;
+	
+	if (ammoValue + value >= ammoValueMax) newAmmoValue = ammoValueMax;
+	else if (ammoValue + value <= 0) newAmmoValue = 0;
+	else newAmmoValue = ammoValue + value;
+
+	switch (ammoType)
+	{
+	case UWeaponAmmoType::Shell: {
+		Shells.Value = newAmmoValue;
+		return true;
+	}
+	case UWeaponAmmoType::Bullet: {
+		Bullets.Value = newAmmoValue;
+		return true;
+	}
+	case UWeaponAmmoType::Energy: {
+		Energy.Value = newAmmoValue;
+		return true;
+	}
+	case UWeaponAmmoType::Rocket: {
+		Rockets.Value = newAmmoValue;
+		return true;
+	}
+	case UWeaponAmmoType::Melee: {
+		return false;
+	}
+	default: return false;
+	}
+}
+

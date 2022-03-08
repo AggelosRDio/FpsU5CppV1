@@ -45,4 +45,8 @@ public:
 
 	UFUNCTION()
 		void ApplyFireDamage();
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (MakeEditWidget = true, AllowPrivateAccess = true))
+		float DamageValue = 5.0f;
 };

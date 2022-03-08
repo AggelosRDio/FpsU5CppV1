@@ -26,6 +26,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Health)
 		TSubclassOf<UUserWidget> HudWidgetClass;
 
+	/*UPROPERTY(EditAnywhere, Category = Ammo)
+		TSubclassOf<UUserWidget> HudAmmoWidgetClass;*/
+
 	UPROPERTY(EditAnywhere, Category = Health)
 		class UUserWidget* CurrentWidget;
 
